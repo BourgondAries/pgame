@@ -166,7 +166,8 @@
          [move-loc      (glGetUniformLocation program-id "movement")]
          [tex-loc       (glGetUniformLocation program-id "texture")]
          [points*       (rectangle->f32vector top-left bottom-right)])
-    (erro (f32vector->list points*))
+    ; (erro tex-loc move-loc program-id)
+    ; (exit)
     (register-finalizer tex (lambda (x) (glDeleteBuffers 1 (u32vector x))))
     (register-finalizer vertexarray
                         (lambda (x)
@@ -186,8 +187,8 @@
                   GL_STATIC_DRAW)
 
     (glBindTexture GL_TEXTURE_2D tex)
-    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_BORDER)
-    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_BORDER)
+    ; (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_BORDER)
+    ; (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_BORDER)
 
     ;; Border color if clamp-to-border
     ; (glTexParameterfv GL_TEXTURE_2D GL_TEXTURE_BORDER_COLOR {1 0 0 1})
@@ -211,26 +212,32 @@
         #f
         16
         #f)
-      ; (glEnableVertexAttribArray 1)
-      ; (glVertexAttribPointer
-      ;   1
-      ;   2
-      ;   GL_FLOAT
-      ;   #f
-      ;   2
-      ;   #f)
+      (glEnableVertexAttribArray 1)
+      (glVertexAttribPointer
+        1
+        2
+        GL_FLOAT
+        #f
+        16
+        #f)
       ; (glUniform1f tex-loc
+      (glActiveTexture GL_TEXTURE0)
+      (glUniform1i tex-loc #|GL_TEXTURE|# 0)
+      (glBindTexture GL_TEXTURE_2D tex)
+      (trce tex-loc tex)
+      ; (glBindSampler tex tex-loc)
       (glUniformMatrix4fv move-loc 1 #f
                           (list->f32vector
                             (map real->single-flonum
                               (matrix->list
-                                (matrix*
-                                         (matrix [[1.0 0 0 0]
+                                (matrix* (matrix [[1.0 0 0 0]
                                                   [0 1.0 0 0]
                                                   [0 0 1.0 0]
                                                   [0 0 0 1]]))))))
+      (trce 'drawing)
       (glDrawArrays GL_TRIANGLES 0 6)
-      ; (glDisableVertexAttribArray 1)
+      (trce tex-loc tex)
+      (glDisableVertexAttribArray 1)
       (glDisableVertexAttribArray 0)
       )))
 
@@ -267,11 +274,11 @@
 
 (define (draw global-trn)
   (info global-trn)
+  ((draw-texture "data/walking.png" '(-1 1) '(1 -1)) 1)
   ((draw-white-shape '((0.1 0.1 0.0)
                        (0.1 0.3 0.0)
                        (0.2 0.3 0.0)))
    0 0 #:translation global-trn)
-  ((draw-texture "data/walking.png" '(-1 1) '(1 -1)) 1)
   )
 
 ;; Handles all pure state changes

@@ -9,6 +9,6 @@ uniform mat4 movement;
 
 void main(){
 
-    gl_Position =  vec4(vertex,0,1);
+    gl_Position =  movement * vec4(vertex,0,1);
     texture_coord = vertex_uv;
 }
