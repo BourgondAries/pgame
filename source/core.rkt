@@ -5,7 +5,7 @@
 (require racket/list syntax/parse/define
          (for-syntax racket/base racket/list racket/string
                      threading)
-         ffi/vector finalizer opengl opengl/util threading
+         ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
          "breakpoint.rkt")
 
@@ -83,14 +83,16 @@
 (define/memoize (create-program* vertex fragment) #:finalize (lambda (x) (erro x) (glDeleteProgram x))
   (create-program vertex fragment))
 
-(require racket/local)
-
 (define/memoize (draw-white-shape points)
-  (let* ([vertexarray  (glGenVertexArrays 1)]
-         [vertexarray* (u32vector-ref vertexarray 0)]
-         [vertexbuffer (glGenBuffers 1)]
+  (let* ([vertexarray   (glGenVertexArrays 1)]
+         [vertexarray*  (u32vector-ref vertexarray 0)]
+         [vertexbuffer  (glGenBuffers 1)]
          [vertexbuffer* (u32vector-ref vertexbuffer 0)]
-         [points* (list->f32vector (map real->single-flonum (flatten points)))])
+         [program-id    (create-program* (load-shader* "source/shaders/shape.vertex.glsl"   GL_VERTEX_SHADER)
+                                         (load-shader* "source/shaders/shape.fragment.glsl" GL_FRAGMENT_SHADER))]
+         [move-loc      (glGetUniformLocation program-id "movement")]
+         [point-length  (length points)]
+         [points*       (list->f32vector (map real->single-flonum (flatten points)))])
     (glBindVertexArray vertexarray*)
     (glBindBuffer GL_ARRAY_BUFFER vertexbuffer*)
     (glBufferData GL_ARRAY_BUFFER
@@ -109,7 +111,15 @@
         #f
         0
         #f)
-      (glDrawArrays GL_TRIANGLES 0 3)
+      (glUniformMatrix4fv move-loc 1 #f
+                          (list->f32vector
+                            (map real->single-flonum
+                              (matrix->list
+                                (matrix [[1.0 0 0 0]
+                                         [0 1.0 0 0]
+                                         [0 0 1.0 0]
+                                         [x y 0 1]])))))
+      (glDrawArrays GL_TRIANGLES 0 point-length)
       (glDisableVertexAttribArray 0)
       )))
 
@@ -127,9 +137,9 @@
 ;; Handles all impure state changes
 (define (impure state)
   ((draw-white-shape '((-1.0 -1.0 0.0)
-                      (1.0 -1.0 0.0)
-                      (0.0 1.0 0.0)))
-   0 0)
+                       (1.0 -1.0 0.0)
+                       (0.0 1.0 0.0)))
+   0 0.2)
   (H~> state
     (glfwSwapBuffers (window))
   ))
