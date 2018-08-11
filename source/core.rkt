@@ -136,28 +136,21 @@
 (define (load-texture* file)
   (load-texture file #:mipmap #t))
 
-(define (rectangle->f32vector top-left bottom-right)
-  (define lx (real->single-flonum (first top-left)))
-  (define rx (real->single-flonum (first bottom-right)))
-  (define ty (real->single-flonum (second top-left)))
-  (define by (real->single-flonum (second bottom-right)))
-  (if #t
-    (f32vector lx ty 0f0 1f0
-               rx ty 1f0 1f0
-               lx by 0f0 0f0
+(define (rectangle->f32vector bottom-left top-right)
+  (define lx (real->single-flonum (first bottom-left)))
+  (define rx (real->single-flonum (first top-right)))
+  (define ty (real->single-flonum (second top-right)))
+  (define by (real->single-flonum (second bottom-left)))
+    (f32vector lx ty 0f0 0f0
+               rx ty 1f0 0f0
+               lx by 0f0 1f0
 
-               lx by 0f0 0f0
-               rx ty 1f0 1f0
-               rx by 1f0 0f0)
-    (f32vector lx ty
-               rx ty
-               lx by
+               lx by 0f0 1f0
+               rx ty 1f0 0f0
+               rx by 1f0 1f0)
+    )
 
-               lx by
-               rx ty
-               rx by)))
-
-(define/memoize (draw-texture file top-left bottom-right)
+(define/memoize (draw-texture file bottom-left top-right)
   (let* ([tex (load-texture* file)]
          [vertexarray   (u32vector-ref (glGenVertexArrays 1) 0)]
          [vertexbuffer  (u32vector-ref (glGenBuffers 1) 0)]
@@ -165,9 +158,7 @@
                                          (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER))]
          [move-loc      (glGetUniformLocation program-id "movement")]
          [tex-loc       (glGetUniformLocation program-id "texture")]
-         [points*       (rectangle->f32vector top-left bottom-right)])
-    ; (erro tex-loc move-loc program-id)
-    ; (exit)
+         [points*       (rectangle->f32vector botom-left top-right)])
     (register-finalizer tex (lambda (x) (glDeleteBuffers 1 (u32vector x))))
     (register-finalizer vertexarray
                         (lambda (x)
@@ -202,30 +193,15 @@
                                      (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
 
       (glEnableVertexAttribArray 0)
-      (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
-      ; (glActiveTexture GL_TEXTURE0)
-      ; (glBindTexture GL_TEXTURE_2D tex)
-      (glVertexAttribPointer
-        0
-        2
-        GL_FLOAT
-        #f
-        16
-        #f)
       (glEnableVertexAttribArray 1)
-      (glVertexAttribPointer
-        1
-        2
-        GL_FLOAT
-        #f
-        16
-        #f)
-      ; (glUniform1f tex-loc
+      (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
+      (glVertexAttribPointer 0 2 GL_FLOAT #f 16 #f)
+      (glVertexAttribPointer 1 2 GL_FLOAT #f 16 8)
+
       (glActiveTexture GL_TEXTURE0)
       (glUniform1i tex-loc #|GL_TEXTURE|# 0)
       (glBindTexture GL_TEXTURE_2D tex)
-      (trce tex-loc tex)
-      ; (glBindSampler tex tex-loc)
+
       (glUniformMatrix4fv move-loc 1 #f
                           (list->f32vector
                             (map real->single-flonum
@@ -234,9 +210,8 @@
                                                   [0 1.0 0 0]
                                                   [0 0 1.0 0]
                                                   [0 0 0 1]]))))))
-      (trce 'drawing)
       (glDrawArrays GL_TRIANGLES 0 6)
-      (trce tex-loc tex)
+
       (glDisableVertexAttribArray 1)
       (glDisableVertexAttribArray 0)
       )))
@@ -274,7 +249,7 @@
 
 (define (draw global-trn)
   (info global-trn)
-  ((draw-texture "data/walking.png" '(-1 1) '(1 -1)) 1)
+  ((draw-texture "data/walking.png" '(-1 -1) '(0 0)) 1)
   ((draw-white-shape '((0.1 0.1 0.0)
                        (0.1 0.3 0.0)
                        (0.2 0.3 0.0)))
