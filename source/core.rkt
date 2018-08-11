@@ -3,10 +3,18 @@
 (provide breakpoint core)
 
 (require racket/list syntax/parse/define
-         (for-syntax racket/base racket/list)
-         finalizer
-         glfw3 logger memo nested-hash opengl spipe
+         (for-syntax racket/base racket/list racket/string
+                     threading)
+         ffi/vector finalizer opengl opengl/util threading
+         glfw3 logger memo nested-hash spipe
          "breakpoint.rkt")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Cleaning up state
+;;
+;; Used to clean up the state after a break exception has
+;; been thrown. Intended to gracefully exit the application.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (cleanup state)
   (H~>
@@ -44,22 +52,95 @@
     (cond
       ([break-seen?]      (break state cleanup))
       ([empty? state]     (initialize state))
+      ([nested-hash-ref state 'game 'should-exit?] (break state cleanup))
       (else               (core* state)))))
 
-;; Acts as glue between pure an impure. Mainly 
+(define-syntax-parser map-glfw-keys
+  ([_ key:id ...+]
+   #:with (key* ...) (map (lambda (stx)
+                            (~> stx
+                                syntax-e
+                                symbol->string
+                                string-upcase
+                                (string-replace "-" "_")
+                                (string-append "GLFW_KEY_" _)
+                                string->symbol
+                                (datum->syntax stx _ stx)))
+                          (attribute key))
+   #'(lambda (window)
+       (glfwPollEvents)
+       (~>
+         (hash)
+         (hash-set 'key (not (zero? (glfwGetKey window key*)))) ...)
+   )))
+
+(define get-keys
+  (map-glfw-keys left-control right-control w a s d up down left right))
+
+(define/memoize (load-shader* file shader-type) #:finalize (lambda (x) (erro x) (glDeleteShader x))
+  (load-shader file shader-type))
+
+(define/memoize (create-program* vertex fragment) #:finalize (lambda (x) (erro x) (glDeleteProgram x))
+  (create-program vertex fragment))
+
+(require racket/local)
+
+(define/memoize (draw-white-shape points)
+  (let* ([vertexarray  (glGenVertexArrays 1)]
+         [vertexarray* (u32vector-ref vertexarray 0)]
+         [vertexbuffer (glGenBuffers 1)]
+         [vertexbuffer* (u32vector-ref vertexbuffer 0)]
+         [points* (list->f32vector (map real->single-flonum (flatten points)))])
+    (glBindVertexArray vertexarray*)
+    (glBindBuffer GL_ARRAY_BUFFER vertexbuffer*)
+    (glBufferData GL_ARRAY_BUFFER
+                  (* (length points) 3 4)
+                  (f32vector->cpointer points*)
+                  GL_STATIC_DRAW)
+    (lambda (x y)
+      (glUseProgram (create-program* (load-shader* "source/shaders/shape.vertex.glsl"   GL_VERTEX_SHADER)
+                                     (load-shader* "source/shaders/shape.fragment.glsl" GL_FRAGMENT_SHADER)))
+      (glEnableVertexAttribArray 0)
+      (glBindBuffer GL_ARRAY_BUFFER vertexbuffer*)
+      (glVertexAttribPointer
+        0
+        3
+        GL_FLOAT
+        #f
+        0
+        #f)
+      (glDrawArrays GL_TRIANGLES 0 3)
+      (glDisableVertexAttribArray 0)
+      )))
+
+;; Acts as glue between pure an impure. Mainly
 (define (core* state)
   (H~> state
-    (impure system)
-    (pure   game)
+    (impure   system)
+    (get-keys (system.window) (game.keys))
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    (pure   game) ;; Pure game logic. All else is glue/impure ;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ; trce
   ))
 
 ;; Handles all impure state changes
 (define (impure state)
+  ((draw-white-shape '((-1.0 -1.0 0.0)
+                      (1.0 -1.0 0.0)
+                      (0.0 1.0 0.0)))
+   0 0)
   (H~> state
     (glfwSwapBuffers (window))
   ))
 
 ;; Handles all pure state changes
 (define (pure state)
-  state
-  )
+  ; (dbug (current-inexact-milliseconds))
+  (H~>
+    state
+    (check-C-W-exit (keys.left-control keys.w) (should-exit?))
+  ))
+
+(define (check-C-W-exit left-control w)
+  (and left-control w))
