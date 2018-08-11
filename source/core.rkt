@@ -158,7 +158,7 @@
                                          (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER))]
          [move-loc      (glGetUniformLocation program-id "movement")]
          [tex-loc       (glGetUniformLocation program-id "texture")]
-         [points*       (rectangle->f32vector botom-left top-right)])
+         [points*       (rectangle->f32vector bottom-left top-right)])
     (register-finalizer tex (lambda (x) (glDeleteBuffers 1 (u32vector x))))
     (register-finalizer vertexarray
                         (lambda (x)
@@ -178,16 +178,16 @@
                   GL_STATIC_DRAW)
 
     (glBindTexture GL_TEXTURE_2D tex)
-    ; (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_BORDER)
-    ; (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_BORDER)
+    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_BORDER)
+    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_BORDER)
 
     ;; Border color if clamp-to-border
     ; (glTexParameterfv GL_TEXTURE_2D GL_TEXTURE_BORDER_COLOR {1 0 0 1})
 
-;     (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
-;     (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAX_FILTER GL_LINEAR)
+    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
+    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
 
-    ; (glGenerateMipmap GL_TEXTURE_2D)
+    (glGenerateMipmap GL_TEXTURE_2D)
     (lambda (x)
       (glUseProgram (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
                                      (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
@@ -228,6 +228,8 @@
     ; trce
   ))
 
+(define (add1* n) (if n (add1 n) 0))
+
 (define (construct-matrix trn)
   (dbug trn)
   (if trn
@@ -243,12 +245,12 @@
 (define (impure state)
   (glClear GL_COLOR_BUFFER_BIT)
   (H~> state
+    (add1* iter)
     (draw (translation))
     (glfwSwapBuffers (window))
   ))
 
 (define (draw global-trn)
-  (info global-trn)
   ((draw-texture "data/walking.png" '(-1 -1) '(0 0)) 1)
   ((draw-white-shape '((0.1 0.1 0.0)
                        (0.1 0.3 0.0)
