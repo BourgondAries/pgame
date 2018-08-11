@@ -93,6 +93,15 @@
          [move-loc      (glGetUniformLocation program-id "movement")]
          [point-length  (length points)]
          [points*       (list->f32vector (map real->single-flonum (flatten points)))])
+    (register-finalizer vertexarray*
+                        (lambda (x)
+                          (trce `(gldelet vertex))
+                          (exit 99)
+                          (glDeleteVertexArrays 1 (u32vector x))))
+    (register-finalizer vertexbuffer*
+                        (lambda (x)
+                          (trce `(gldelet))
+                          (glDeleteBuffers 1 (u32vector x))))
     (glBindVertexArray vertexarray*)
     (glBindBuffer GL_ARRAY_BUFFER vertexbuffer*)
     (glBufferData GL_ARRAY_BUFFER
@@ -121,6 +130,107 @@
                                                   [0 0 1.0 0]
                                                   [x y 0 1]]))))))
       (glDrawArrays GL_TRIANGLES 0 point-length)
+      (glDisableVertexAttribArray 0)
+      )))
+
+(define (load-texture* file)
+  (load-texture file #:mipmap #t))
+
+(define (rectangle->f32vector top-left bottom-right)
+  (define lx (real->single-flonum (first top-left)))
+  (define rx (real->single-flonum (first bottom-right)))
+  (define ty (real->single-flonum (second top-left)))
+  (define by (real->single-flonum (second bottom-right)))
+  (if #t
+    (f32vector lx ty 0f0 1f0
+               rx ty 1f0 1f0
+               lx by 0f0 0f0
+
+               lx by 0f0 0f0
+               rx ty 1f0 1f0
+               rx by 1f0 0f0)
+    (f32vector lx ty
+               rx ty
+               lx by
+
+               lx by
+               rx ty
+               rx by)))
+
+(define/memoize (draw-texture file top-left bottom-right)
+  (let* ([tex (load-texture* file)]
+         [vertexarray   (u32vector-ref (glGenVertexArrays 1) 0)]
+         [vertexbuffer  (u32vector-ref (glGenBuffers 1) 0)]
+         [program-id    (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
+                                         (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER))]
+         [move-loc      (glGetUniformLocation program-id "movement")]
+         [tex-loc       (glGetUniformLocation program-id "texture")]
+         [points*       (rectangle->f32vector top-left bottom-right)])
+    (erro (f32vector->list points*))
+    (register-finalizer tex (lambda (x) (glDeleteBuffers 1 (u32vector x))))
+    (register-finalizer vertexarray
+                        (lambda (x)
+                          (trce `(gldelet vertex))
+                          (exit 99)
+                          (glDeleteVertexArrays 1 (u32vector x))))
+    (register-finalizer vertexbuffer
+                        (lambda (x)
+                          (trce `(gldelet))
+                          (glDeleteBuffers 1 (u32vector x))))
+
+    (glBindVertexArray vertexarray)
+    (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
+    (glBufferData GL_ARRAY_BUFFER
+                  (* (f32vector-length points*) 4)
+                  (f32vector->cpointer points*)
+                  GL_STATIC_DRAW)
+
+    (glBindTexture GL_TEXTURE_2D tex)
+    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_BORDER)
+    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_BORDER)
+
+    ;; Border color if clamp-to-border
+    ; (glTexParameterfv GL_TEXTURE_2D GL_TEXTURE_BORDER_COLOR {1 0 0 1})
+
+;     (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
+;     (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAX_FILTER GL_LINEAR)
+
+    ; (glGenerateMipmap GL_TEXTURE_2D)
+    (lambda (x)
+      (glUseProgram (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
+                                     (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
+
+      (glEnableVertexAttribArray 0)
+      (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
+      ; (glActiveTexture GL_TEXTURE0)
+      ; (glBindTexture GL_TEXTURE_2D tex)
+      (glVertexAttribPointer
+        0
+        2
+        GL_FLOAT
+        #f
+        16
+        #f)
+      ; (glEnableVertexAttribArray 1)
+      ; (glVertexAttribPointer
+      ;   1
+      ;   2
+      ;   GL_FLOAT
+      ;   #f
+      ;   2
+      ;   #f)
+      ; (glUniform1f tex-loc
+      (glUniformMatrix4fv move-loc 1 #f
+                          (list->f32vector
+                            (map real->single-flonum
+                              (matrix->list
+                                (matrix*
+                                         (matrix [[1.0 0 0 0]
+                                                  [0 1.0 0 0]
+                                                  [0 0 1.0 0]
+                                                  [0 0 0 1]]))))))
+      (glDrawArrays GL_TRIANGLES 0 6)
+      ; (glDisableVertexAttribArray 1)
       (glDisableVertexAttribArray 0)
       )))
 
@@ -161,6 +271,7 @@
                        (0.1 0.3 0.0)
                        (0.2 0.3 0.0)))
    0 0 #:translation global-trn)
+  ((draw-texture "data/walking.png" '(-1 1) '(1 -1)) 1)
   )
 
 ;; Handles all pure state changes
