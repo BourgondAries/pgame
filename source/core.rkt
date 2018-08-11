@@ -99,7 +99,7 @@
                   (* (length points) 3 4)
                   (f32vector->cpointer points*)
                   GL_STATIC_DRAW)
-    (lambda (x y)
+    (lambda (x y #:translation [translation (identity-matrix 4)])
       (glUseProgram (create-program* (load-shader* "source/shaders/shape.vertex.glsl"   GL_VERTEX_SHADER)
                                      (load-shader* "source/shaders/shape.fragment.glsl" GL_FRAGMENT_SHADER)))
       (glEnableVertexAttribArray 0)
@@ -115,10 +115,11 @@
                           (list->f32vector
                             (map real->single-flonum
                               (matrix->list
-                                (matrix [[1.0 0 0 0]
-                                         [0 1.0 0 0]
-                                         [0 0 1.0 0]
-                                         [x y 0 1]])))))
+                                (matrix* translation
+                                         (matrix [[1.0 0 0 0]
+                                                  [0 1.0 0 0]
+                                                  [0 0 1.0 0]
+                                                  [x y 0 1]]))))))
       (glDrawArrays GL_TRIANGLES 0 point-length)
       (glDisableVertexAttribArray 0)
       )))
@@ -126,6 +127,7 @@
 ;; Acts as glue between pure an impure. Mainly
 (define (core* state)
   (H~> state
+    (construct-matrix (game.translation) (system.translation))
     (impure   system)
     (get-keys (system.window) (game.keys))
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -134,23 +136,62 @@
     ; trce
   ))
 
+(define (construct-matrix trn)
+  (dbug trn)
+  (if trn
+    (let ([x (hash-ref trn 'x 0)]
+          [y (hash-ref trn 'y 0)])
+      (matrix [[1 0 0 0]
+               [0 1 0 0]
+               [0 0 1 0]
+               [(/ x 20) (/ y 20) 0 1]]))
+    (identity-matrix 4)))
+
 ;; Handles all impure state changes
 (define (impure state)
-  ((draw-white-shape '((-1.0 -1.0 0.0)
-                       (1.0 -1.0 0.0)
-                       (0.0 1.0 0.0)))
-   0 0.2)
+  (glClear GL_COLOR_BUFFER_BIT)
   (H~> state
+    (draw (translation))
     (glfwSwapBuffers (window))
   ))
 
+(define (draw global-trn)
+  (info global-trn)
+  ((draw-white-shape '((0.1 0.1 0.0)
+                       (0.1 0.3 0.0)
+                       (0.2 0.3 0.0)))
+   0 0 #:translation global-trn)
+  )
+
 ;; Handles all pure state changes
 (define (pure state)
-  ; (dbug (current-inexact-milliseconds))
   (H~>
     state
     (check-C-W-exit (keys.left-control keys.w) (should-exit?))
+    (add1-if-true (keys.w translation.y) (translation.y))
+    (sub1-if-true (keys.a translation.x) (translation.x))
+    (sub1-if-true (keys.s translation.y) (translation.y))
+    (add1-if-true (keys.d translation.x) (translation.x))
+    trce
   ))
+
+(define (add1-if-true condition value)
+  (if condition
+    (if value
+      (add1 value)
+      0)
+    (if value
+      value
+      0)))
+
+(define (sub1-if-true condition value)
+  (if condition
+    (if value
+      (sub1 value)
+      0)
+    (if value
+      value
+      0)))
 
 (define (check-C-W-exit left-control w)
   (and left-control w))
