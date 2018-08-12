@@ -45,6 +45,7 @@
     (initialize-glfw () (system.window))
     (add-sprites     () (system.sprite))
     (add-sprites*    () (system.animation.madotsuki))
+    ((const 'core*)  () (game.pump))
     ((const 0)       system.iter)
   ))
 

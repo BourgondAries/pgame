@@ -9,6 +9,9 @@
          glfw3 logger memo nested-hash spipe
          "breakpoint.rkt" "drawing.rkt" "impure.rkt" "initialization.rkt" "pure.rkt" "shutdown.rkt")
 
+(define-namespace-anchor a)
+(define ns (namespace-anchor->namespace a))
+(define/memoize (meval form) (eval form ns))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; This is the semantic entry point of the program
 ;;
@@ -22,7 +25,7 @@
       ([break-seen?]         (break state cleanup))
       ([empty? state]        (initialize state))
       ([should-exit? state]  (break state cleanup))
-      (else                  (core* state)))))
+      (else                  ((meval (nested-hash-ref state 'game 'pump)) state)))))
 
 ;; Acts as glue between pure an impure. Mainly
 (define (core* state)
