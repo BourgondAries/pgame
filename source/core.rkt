@@ -36,6 +36,9 @@
   (glfwWindowHint GLFW_OPENGL_FORWARD_COMPAT GL_TRUE)
   (glfwWindowHint GLFW_OPENGL_PROFILE GLFW_OPENGL_CORE_PROFILE)
   (glViewport 0 0 800 600)
+  (glEnable GL_BLEND)
+  (glEnable GL_MULTISAMPLE)
+  (glBlendFunc GL_ONE GL_ONE_MINUS_SRC_ALPHA)
   (glDisable GL_DEPTH_TEST)
   (glClearColor 0.3 0.3 0.3 0.5)
   (glfwSetInputMode window GLFW_STICKY_KEYS GL_TRUE)
@@ -45,7 +48,15 @@
   (H~>
     (hash)
     (initialize-glfw () (system.window))
+    (add-sprites () (system.sprite))
   ))
+
+(define (add-sprites)
+  (list
+    (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0 0)    '(0.25 1))
+    (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0.25 0) '(0.50 1))
+    (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0.50 0) '(0.75 1))
+    (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0.75 0) '(1    1))))
 
 (define (core state)
   (with-handlers* ([exn:break? (lambda (_) (break state cleanup))])
@@ -150,6 +161,26 @@
                rx by 1f0 1f0)
     )
 
+(define (rectangle->f32vector/uv bottom-left    top-right
+                                 bottom-left-uv top-right-uv)
+  (define lx (real->single-flonum (first bottom-left)))
+  (define rx (real->single-flonum (first top-right)))
+  (define ty (real->single-flonum (second top-right)))
+  (define by (real->single-flonum (second bottom-left)))
+
+  (define lx* (real->single-flonum (first bottom-left-uv)))
+  (define rx* (real->single-flonum (first top-right-uv)))
+  (define ty* (real->single-flonum (second top-right-uv)))
+  (define by* (real->single-flonum (second bottom-left-uv)))
+    (f32vector lx ty lx* by*
+               rx ty rx* by*
+               lx by lx* ty*
+
+               lx by lx* ty*
+               rx ty rx* by*
+               rx by rx* ty*)
+    )
+
 (define/memoize (draw-texture file bottom-left top-right)
   (let* ([tex (load-texture* file)]
          [vertexarray   (u32vector-ref (glGenVertexArrays 1) 0)]
@@ -159,6 +190,74 @@
          [move-loc      (glGetUniformLocation program-id "movement")]
          [tex-loc       (glGetUniformLocation program-id "texture")]
          [points*       (rectangle->f32vector bottom-left top-right)])
+    (register-finalizer tex (lambda (x) (glDeleteBuffers 1 (u32vector x))))
+    (register-finalizer vertexarray
+                        (lambda (x)
+                          (trce `(gldelet vertex))
+                          (exit 99)
+                          (glDeleteVertexArrays 1 (u32vector x))))
+    (register-finalizer vertexbuffer
+                        (lambda (x)
+                          (trce `(gldelet))
+                          (glDeleteBuffers 1 (u32vector x))))
+
+    (glBindVertexArray vertexarray)
+    (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
+    (glBufferData GL_ARRAY_BUFFER
+                  (* (f32vector-length points*) 4)
+                  (f32vector->cpointer points*)
+                  GL_STATIC_DRAW)
+
+    (glBindTexture GL_TEXTURE_2D tex)
+    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_BORDER)
+    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_BORDER)
+
+    ;; Border color if clamp-to-border
+    ; (glTexParameterfv GL_TEXTURE_2D GL_TEXTURE_BORDER_COLOR {1 0 0 1})
+
+    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
+    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
+
+    (glGenerateMipmap GL_TEXTURE_2D)
+    (lambda (x)
+      (glUseProgram (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
+                                     (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
+
+      (glEnableVertexAttribArray 0)
+      (glEnableVertexAttribArray 1)
+      (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
+      (glVertexAttribPointer 0 2 GL_FLOAT #f 16 #f)
+      (glVertexAttribPointer 1 2 GL_FLOAT #f 16 8)
+
+      (glActiveTexture GL_TEXTURE0)
+      (glUniform1i tex-loc #|GL_TEXTURE|# 0)
+      (glBindTexture GL_TEXTURE_2D tex)
+
+      (glUniformMatrix4fv move-loc 1 #f
+                          (list->f32vector
+                            (map real->single-flonum
+                              (matrix->list
+                                (matrix* (matrix [[1.0 0 0 0]
+                                                  [0 1.0 0 0]
+                                                  [0 0 1.0 0]
+                                                  [0 0 0 1]]))))))
+      (glDrawArrays GL_TRIANGLES 0 6)
+
+      (glDisableVertexAttribArray 1)
+      (glDisableVertexAttribArray 0)
+      )))
+
+(define/memoize (draw-texture/uv file bottom-left    top-right
+                                      bottom-left-uv top-right-uv)
+  (let* ([tex           (load-texture* file)]
+         [vertexarray   (u32vector-ref (glGenVertexArrays 1) 0)]
+         [vertexbuffer  (u32vector-ref (glGenBuffers      1) 0)]
+         [program-id    (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
+                                         (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER))]
+         [move-loc      (glGetUniformLocation program-id "movement")]
+         [tex-loc       (glGetUniformLocation program-id "texture")]
+         [points*       (rectangle->f32vector/uv bottom-left    top-right
+                                                 bottom-left-uv top-right-uv)])
     (register-finalizer tex (lambda (x) (glDeleteBuffers 1 (u32vector x))))
     (register-finalizer vertexarray
                         (lambda (x)
@@ -246,11 +345,12 @@
   (glClear GL_COLOR_BUFFER_BIT)
   (H~> state
     (add1* iter)
-    (draw (translation))
+    (draw (translation sprite iter))
     (glfwSwapBuffers (window))
   ))
 
-(define (draw global-trn)
+(define (draw global-trn sprites iter)
+  ((list-ref sprites (floor (/ (modulo iter 40) 10))) 0)
   ((draw-texture "data/walking.png" '(-1 -1) '(0 0)) 1)
   ((draw-white-shape '((0.1 0.1 0.0)
                        (0.1 0.3 0.0)

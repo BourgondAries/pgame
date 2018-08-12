@@ -3,8 +3,14 @@
                     racket/base]]
 
 @title{pgame}
-@author{kefin}
+@author{Kevin Robert Stravers}
 
 @defmodule[pgame]
 
-Package Description Here
+The overarching state of the program is referred to as @racket[state].
+
+@racket[state] has two subcomponents: @racket[system] and @racket[game].
+
+@racket[system] contains data regarding the screen, interfaces, files, etc.
+
+@racket[game] contains pure game data and is guaranteed to be serializable.
