@@ -28,10 +28,10 @@
 (define (core* state)
   (H~> state
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    (impure   system)  ;; Purely impure game logic            ;;
+    (impure system)  ;; Purely impure game logic              ;;
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; What follows are system -> game transformations
-    (glfwWindowShouldClose (system.window)    (should-exit?))
+    (glfwWindowShouldClose (system.window) (should-exit?))
     (last-key              (system.last-direction game.keys.w game.keys.a game.keys.s game.keys.d) (system.last-direction))
     (get-keys              (system.window) (game.keys))
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -39,7 +39,9 @@
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; What follows are game -> system transformations
     (any-direction-keys?   (game.keys) (system.any-direction-keys?))
-    (construct-matrix      (game.translation) (system.translation))
+    (make-global-transform (game.transform) (system.transform))
     trce
   ))
 
+
+;; (("data/madoka.png" 4 4) 13 0)

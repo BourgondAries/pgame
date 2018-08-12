@@ -18,10 +18,12 @@
   (H~>
     state
     (check-C-W-exit (keys.left-control keys.w) (should-exit?))
-    (add1-if-true (keys.w translation.y) (translation.y))
-    (sub1-if-true (keys.a translation.x) (translation.x))
-    (sub1-if-true (keys.s translation.y) (translation.y))
-    (add1-if-true (keys.d translation.x) (translation.x))
+    (add1-if-true (keys.q transform.r) (transform.r))
+    (sub1-if-true (keys.e transform.r) (transform.r))
+    (add1-if-true (keys.w transform.y) (transform.y))
+    (sub1-if-true (keys.a transform.x) (transform.x))
+    (sub1-if-true (keys.s transform.y) (transform.y))
+    (add1-if-true (keys.d transform.x) (transform.x))
   ))
 
 (define ((if* proc) condition value)

@@ -17,14 +17,14 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
-         "breakpoint.rkt" "drawing.rkt" "initialization.rkt" "pure.rkt")
+         "initialization.rkt" "breakpoint.rkt" "drawing.rkt" "initialization.rkt" "pure.rkt")
 
 ;; Handles all impure state changes
 (define (impure state)
   (glClear GL_COLOR_BUFFER_BIT)
   (H~> state
     ((if* add1) (any-direction-keys? iter) (iter))
-    (draw (translation sprite iter last-direction animation.madotsuki))
+    (draw (transform sprite iter last-direction animation.madotsuki))
     (glfwSwapBuffers (window))
   ))
 
@@ -50,18 +50,21 @@
            (hash-set 'key (not (zero? (glfwGetKey window key*)))) ...)
      )))
 
-  ((map-glfw-keys left-control right-control w a s d up down left right) window))
+  ((map-glfw-keys left-control right-control q e w a s d up down left right) window))
 
-(define (construct-matrix trn)
+(define (make-global-transform trn)
   (dbug trn)
   (if trn
     (let ([x (hash-ref trn 'x 0)]
-          [y (hash-ref trn 'y 0)])
+          [y (hash-ref trn 'y 0)]
+          [r (hash-ref trn 'r 0)]
+          )
       (matrix*
         (matrix [[1 0 0 0]
                  [0 1 0 0]
                  [0 0 1 0]
                  [(/ x 20) (/ y 20) 0 1]])
+        ;; rotation here
         (matrix [[0.1 0 0 0]
                  [0 0.1 0 0]
                  [0 0 0.1 0]
@@ -70,12 +73,15 @@
     (identity-matrix 4)))
 
 (define (draw global-trn sprites iter last-direction mado)
+  (trce global-trn)
+  ((animate-texture "data/simple-house.png" '(-1 -1) '(0 0) 3 3) (sub1 iter) iter)
+  ((draw-texture "data/simple-house.png" '(-0.3 0.3) '(0.3 1.4)) 0)
   (match last-direction
     ('s ((list-ref mado (floor (/ (modulo iter 40) 10))) #:transform global-trn))
     ('a ((list-ref mado (+ 4 (floor (/ (modulo iter 40) 10)))) #:transform global-trn))
     ('w ((list-ref mado (+ 8 (floor (/ (modulo iter 40) 10)))) #:transform global-trn))
     ('d ((list-ref mado (+ 12 (floor (/ (modulo iter 40) 10)))) #:transform global-trn))
-    (_ (erro "Unable to find direction")))
+    (_  (erro "Unable to find direction")))
 
   ; ((list-ref sprites (floor (/ (modulo iter 40) 10))) 0)
   ; ((draw-texture "data/walking.png" '(-1 -1) '(0 0)) 1)
