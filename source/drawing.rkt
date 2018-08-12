@@ -2,39 +2,34 @@
 
 (provide draw-white-shape
          draw-texture
+         load-texture*
          draw-texture/uv)
 
 (require racket/list
          ffi/vector finalizer math/matrix opengl opengl/util
          logger memo)
 
-(define/memoize (load-shader* file shader-type) #:finalize (lambda (x) (erro x) (glDeleteShader x))
+(define/memoize (load-shader* file shader-type) #:finalize glDeleteShader
   (load-shader file shader-type))
 
-(define/memoize (create-program* vertex fragment) #:finalize (lambda (x) (erro x) (glDeleteProgram x))
+(define/memoize (create-program* vertex fragment) #:finalize glDeleteProgram
   (create-program vertex fragment))
 
+;; Draws a white shape, takes in a set of triangles.
 (define/memoize (draw-white-shape points)
-  (let* ([vertexarray   (glGenVertexArrays 1)]
-         [vertexarray*  (u32vector-ref vertexarray 0)]
-         [vertexbuffer  (glGenBuffers 1)]
-         [vertexbuffer* (u32vector-ref vertexbuffer 0)]
+  (let* ([vertexarray   (u32vector-ref (glGenVertexArrays 1) 0)]
+         [vertexbuffer  (u32vector-ref (glGenBuffers      1) 0)]
+         ;;
          [program-id    (create-program* (load-shader* "source/shaders/shape.vertex.glsl"   GL_VERTEX_SHADER)
                                          (load-shader* "source/shaders/shape.fragment.glsl" GL_FRAGMENT_SHADER))]
+         ;;
          [move-loc      (glGetUniformLocation program-id "movement")]
          [point-length  (length points)]
          [points*       (list->f32vector (map real->single-flonum (flatten points)))])
-    (register-finalizer vertexarray*
-                        (lambda (x)
-                          (trce `(gldelet vertex))
-                          (exit 99)
-                          (glDeleteVertexArrays 1 (u32vector x))))
-    (register-finalizer vertexbuffer*
-                        (lambda (x)
-                          (trce `(gldelet))
-                          (glDeleteBuffers 1 (u32vector x))))
-    (glBindVertexArray vertexarray*)
-    (glBindBuffer GL_ARRAY_BUFFER vertexbuffer*)
+    (register-finalizer vertexarray  (lambda (x) (glDeleteVertexArrays 1 (u32vector x))))
+    (register-finalizer vertexbuffer (lambda (x) (glDeleteBuffers      1 (u32vector x))))
+    (glBindVertexArray vertexarray)
+    (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
     (glBufferData GL_ARRAY_BUFFER
                   (* (length points) 3 4)
                   (f32vector->cpointer points*)
@@ -43,14 +38,8 @@
       (glUseProgram (create-program* (load-shader* "source/shaders/shape.vertex.glsl"   GL_VERTEX_SHADER)
                                      (load-shader* "source/shaders/shape.fragment.glsl" GL_FRAGMENT_SHADER)))
       (glEnableVertexAttribArray 0)
-      (glBindBuffer GL_ARRAY_BUFFER vertexbuffer*)
-      (glVertexAttribPointer
-        0
-        3
-        GL_FLOAT
-        #f
-        0
-        #f)
+      (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
+      (glVertexAttribPointer 0 3 GL_FLOAT #f 0 #f)
       (glUniformMatrix4fv move-loc 1 #f
                           (list->f32vector
                             (map real->single-flonum
@@ -60,11 +49,11 @@
                                                   [0 1.0 0 0]
                                                   [0 0 1.0 0]
                                                   [x y 0 1]]))))))
-      (glDrawArrays GL_TRIANGLES 0 point-length)
+      (glDrawArrays GL_TRIANGLES  0 point-length)
       (glDisableVertexAttribArray 0)
       )))
 
-(define (load-texture* file)
+(define/memoize (load-texture* file) #:finalize (lambda (x) (glDeleteTextures 1 (u32vector x)) (erro 'del) (exit))
   (load-texture file #:mipmap #t))
 
 (define (rectangle->f32vector bottom-left top-right)
@@ -78,8 +67,7 @@
 
                lx by 0f0 1f0
                rx ty 1f0 0f0
-               rx by 1f0 1f0)
-    )
+               rx by 1f0 1f0))
 
 (define (rectangle->f32vector/uv bottom-left    top-right
                                  bottom-left-uv top-right-uv)
@@ -98,8 +86,7 @@
 
                lx by lx* ty*
                rx ty rx* by*
-               rx by rx* ty*)
-    )
+               rx by rx* ty*))
 
 (define/memoize (draw-texture file bottom-left top-right)
   (let* ([tex (load-texture* file)]

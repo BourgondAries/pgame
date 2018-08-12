@@ -42,13 +42,22 @@
   (glDisable GL_DEPTH_TEST)
   (glClearColor 0.3 0.3 0.3 0.5)
   (glfwSetInputMode window GLFW_STICKY_KEYS GL_TRUE)
+  ; (glPolygonMode GL_FRONT_AND_BACK GL_LINE)
+  ;;
+  (load-texture* "data/sprite.png")
+  (info (load-texture*))
+  (set-box! (load-texture*) (hash-remove (unbox (load-texture*)) "data/sprite.png"))
+  (info (load-texture*))
+  (collect-garbage 'incremental)
+  ;;
   window)
 
 (define (initialize state)
   (H~>
     (hash)
     (initialize-glfw () (system.window))
-    (add-sprites () (system.sprite))
+    (add-sprites     () (system.sprite))
+    (add-sprites*    () (system.animation.madotsuki))
   ))
 
 (define (add-sprites)
@@ -57,6 +66,29 @@
     (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0.25 0) '(0.50 1))
     (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0.50 0) '(0.75 1))
     (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0.75 0) '(1    1))))
+(define (add-sprites*)
+  (list
+    ;; Walking down
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0    0.00) '(0.25 0.25))
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.25 0.00) '(0.50 0.25))
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.50 0.00) '(0.75 0.25))
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.75 0.00) '(1.00 0.25))
+
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.25 0.25) '(0.00 0.50))
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.50 0.25) '(0.25 0.50))
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.75 0.25) '(0.50 0.50))
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(1.00 0.25) '(0.75 0.50))
+
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.25 0.50) '(0.00 0.75))
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.50 0.50) '(0.25 0.75))
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.75 0.50) '(0.50 0.75))
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(1.00 0.50) '(0.75 0.75))
+
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0    0.25) '(0.25 0.50))
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.25 0.25) '(0.50 0.50))
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.50 0.25) '(0.75 0.50))
+    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.75 0.25) '(1.00 0.50))
+    ))
 
 (define (core state)
   (with-handlers* ([exn:break? (lambda (_) (break state cleanup))])
@@ -92,13 +124,31 @@
 (define (core* state)
   (H~> state
     (construct-matrix (game.translation) (system.translation))
+    (last-key (system.last-direction game.keys.w game.keys.a game.keys.s game.keys.d) (system.last-direction))
     (impure   system)
     (get-keys (system.window) (game.keys))
+    (any-direction-keys? (game.keys) (system.any-direction-keys?))
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     (pure   game) ;; Pure game logic. All else is glue/impure ;;
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; trce
   ))
+
+(define (any-direction-keys? keys)
+  (or
+    (hash-ref keys 'w #f)
+    (hash-ref keys 'a #f)
+    (hash-ref keys 's #f)
+    (hash-ref keys 'd #f)))
+
+(define (last-key last-direction w a s d)
+  (cond
+    (w 'w)
+    (a 'a)
+    (s 's)
+    (d 'd)
+    (else (or last-direction 'd))))
+
 
 (define (add1* n) (if n (add1 n) 0))
 
@@ -117,17 +167,30 @@
 (define (impure state)
   (glClear GL_COLOR_BUFFER_BIT)
   (H~> state
-    (add1* iter)
-    (draw (translation sprite iter))
+    (add1-if-true (any-direction-keys? iter) (iter))
+    (draw (translation sprite iter last-direction animation.madotsuki))
     (glfwSwapBuffers (window))
   ))
 
-(define (draw global-trn sprites iter)
-  ((list-ref sprites (floor (/ (modulo iter 40) 10))) 0)
+(define (draw global-trn sprites iter last-direction mado)
+  (match last-direction
+    ('s ((list-ref mado (floor (/ (modulo iter 40) 10))) 0))
+    ('a ((list-ref mado (+ 4 (floor (/ (modulo iter 40) 10)))) 0))
+    ('w ((list-ref mado (+ 8 (floor (/ (modulo iter 40) 10)))) 0))
+    ('d ((list-ref mado (+ 12 (floor (/ (modulo iter 40) 10)))) 0))
+    (_ (erro "Unable to find direction")))
+
+  ; ((list-ref sprites (floor (/ (modulo iter 40) 10))) 0)
   ((draw-texture "data/walking.png" '(-1 -1) '(0 0)) 1)
-  ((draw-white-shape '((0.1 0.1 0.0)
-                       (0.1 0.3 0.0)
-                       (0.2 0.3 0.0)))
+  ((draw-white-shape '(
+                       (0.0 0.0 0.0)
+                       (0.0 0.1 0.0)
+                       (0.1 0.1 0.0)
+
+                       (0.0 0.0 0.0)
+                       (0.1 0.1 0.0)
+                       (0.1 0.0 0.0)
+                       ))
    0 0 #:translation global-trn)
   )
 
