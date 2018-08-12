@@ -7,93 +7,14 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
-         "breakpoint.rkt" "drawing.rkt")
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Cleaning up state
-;;
-;; Used to clean up the state after a break exception has
-;; been thrown. Intended to gracefully exit the application.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define (cleanup state)
-  (H~>
-    state
-    (glfwDestroyWindow system.window)
-    ))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define (initialize-glfw)
-  (when (= (glfwInit) GLFW_FALSE)
-    (ftal^ "glfwInit returned non-success code")
-    (exit 1))
-  (define window (glfwCreateWindow 800 600 "Example Window" #f #f))
-  (glfwMakeContextCurrent window)
-  (glfwWindowHint GLFW_SAMPLES 4)
-  (glfwWindowHint GLFW_CONTEXT_VERSION_MAJOR 3)
-  (glfwWindowHint GLFW_CONTEXT_VERSION_MINOR 3)
-  (glfwWindowHint GLFW_OPENGL_FORWARD_COMPAT GL_TRUE)
-  (glfwWindowHint GLFW_OPENGL_PROFILE GLFW_OPENGL_CORE_PROFILE)
-  (glViewport 0 0 800 600)
-  (glEnable GL_BLEND)
-  (glEnable GL_MULTISAMPLE)
-  (glBlendFunc GL_ONE GL_ONE_MINUS_SRC_ALPHA)
-  (glDisable GL_DEPTH_TEST)
-  (glClearColor 0.3 0.3 0.3 0.5)
-  (glfwSetInputMode window GLFW_STICKY_KEYS GL_TRUE)
-  ; (glPolygonMode GL_FRONT_AND_BACK GL_LINE)
-  ;;
-  (load-texture* "data/sprite.png")
-  (info (load-texture*))
-  (set-box! (load-texture*) (hash-remove (unbox (load-texture*)) "data/sprite.png"))
-  (info (load-texture*))
-  (collect-garbage 'incremental)
-  ;;
-  window)
-
-(define (initialize state)
-  (H~>
-    (hash)
-    (initialize-glfw () (system.window))
-    (add-sprites     () (system.sprite))
-    (add-sprites*    () (system.animation.madotsuki))
-  ))
-
-(define (add-sprites)
-  (list
-    (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0 0)    '(0.25 1))
-    (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0.25 0) '(0.50 1))
-    (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0.50 0) '(0.75 1))
-    (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0.75 0) '(1    1))))
-(define (add-sprites*)
-  (list
-    ;; Walking down
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0    0.00) '(0.25 0.25))
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.25 0.00) '(0.50 0.25))
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.50 0.00) '(0.75 0.25))
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.75 0.00) '(1.00 0.25))
-
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.25 0.25) '(0.00 0.50))
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.50 0.25) '(0.25 0.50))
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.75 0.25) '(0.50 0.50))
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(1.00 0.25) '(0.75 0.50))
-
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.25 0.50) '(0.00 0.75))
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.50 0.50) '(0.25 0.75))
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.75 0.50) '(0.50 0.75))
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(1.00 0.50) '(0.75 0.75))
-
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0    0.25) '(0.25 0.50))
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.25 0.25) '(0.50 0.50))
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.50 0.25) '(0.75 0.50))
-    (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.75 0.25) '(1.00 0.50))
-    ))
-
+         "breakpoint.rkt" "drawing.rkt" "impure.rkt" "initialization.rkt" "pure.rkt" "shutdown.rkt")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; This is the semantic entry point of the program
 ;;
+;; The reason for having with-handlers is to be able
+;; to catch exceptions using that state so it can
+;; be replayed.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (core state)
   (with-handlers* ([exn:break? (lambda (_) (break state cleanup))])
@@ -103,135 +24,22 @@
       ([should-exit? state]  (break state cleanup))
       (else                  (core* state)))))
 
-(define (should-exit? state)
-  (nested-hash-ref state 'game 'should-exit?))
-
-(define-syntax-parser map-glfw-keys
-  ([_ key:id ...+]
-   #:with (key* ...) (map (lambda (stx)
-                            (~> stx
-                                syntax-e
-                                symbol->string
-                                string-upcase
-                                (string-replace "-" "_")
-                                (string-append "GLFW_KEY_" _)
-                                string->symbol
-                                (datum->syntax stx _ stx)))
-                          (attribute key))
-   #'(lambda (window)
-       (glfwPollEvents)
-       (~>
-         (hash)
-         (hash-set 'key (not (zero? (glfwGetKey window key*)))) ...)
-   )))
-
-(define get-keys
-  (map-glfw-keys left-control right-control w a s d up down left right))
-
 ;; Acts as glue between pure an impure. Mainly
 (define (core* state)
   (H~> state
-    (glfwWindowShouldClose (system.window) (should-exit?))
-    (construct-matrix (game.translation) (system.translation))
-    (last-key (system.last-direction game.keys.w game.keys.a game.keys.s game.keys.d) (system.last-direction))
-    (impure   system)
-    (get-keys (system.window) (game.keys))
-    (any-direction-keys? (game.keys) (system.any-direction-keys?))
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    (impure   system)  ;; Purely impure game logic            ;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; What follows are system -> game transformations
+    (glfwWindowShouldClose (system.window)    (should-exit?))
+    (last-key              (system.last-direction game.keys.w game.keys.a game.keys.s game.keys.d) (system.last-direction))
+    (get-keys              (system.window) (game.keys))
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     (pure   game) ;; Pure game logic. All else is glue/impure ;;
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ; trce
-  ))
-
-(define (any-direction-keys? keys)
-  (or
-    (hash-ref keys 'w #f)
-    (hash-ref keys 'a #f)
-    (hash-ref keys 's #f)
-    (hash-ref keys 'd #f)))
-
-(define (last-key last-direction w a s d)
-  (cond
-    (w 'w)
-    (a 'a)
-    (s 's)
-    (d 'd)
-    (else (or last-direction 'd))))
-
-
-(define (add1* n) (if n (add1 n) 0))
-
-(define (construct-matrix trn)
-  (dbug trn)
-  (if trn
-    (let ([x (hash-ref trn 'x 0)]
-          [y (hash-ref trn 'y 0)])
-      (matrix [[1 0 0 0]
-               [0 1 0 0]
-               [0 0 1 0]
-               [(/ x 20) (/ y 20) 0 1]]))
-    (identity-matrix 4)))
-
-;; Handles all impure state changes
-(define (impure state)
-  (glClear GL_COLOR_BUFFER_BIT)
-  (H~> state
-    (add1-if-true (any-direction-keys? iter) (iter))
-    (draw (translation sprite iter last-direction animation.madotsuki))
-    (glfwSwapBuffers (window))
-  ))
-
-(define (draw global-trn sprites iter last-direction mado)
-  (match last-direction
-    ('s ((list-ref mado (floor (/ (modulo iter 40) 10))) 0))
-    ('a ((list-ref mado (+ 4 (floor (/ (modulo iter 40) 10)))) 0))
-    ('w ((list-ref mado (+ 8 (floor (/ (modulo iter 40) 10)))) 0))
-    ('d ((list-ref mado (+ 12 (floor (/ (modulo iter 40) 10)))) 0))
-    (_ (erro "Unable to find direction")))
-
-  ; ((list-ref sprites (floor (/ (modulo iter 40) 10))) 0)
-  ((draw-texture "data/walking.png" '(-1 -1) '(0 0)) 1)
-  ((draw-white-shape '(
-                       (0.0 0.0 0.0)
-                       (0.0 0.1 0.0)
-                       (0.1 0.1 0.0)
-
-                       (0.0 0.0 0.0)
-                       (0.1 0.1 0.0)
-                       (0.1 0.0 0.0)
-                       ))
-   0 0 #:translation global-trn)
-  )
-
-;; Handles all pure state changes
-(define (pure state)
-  (H~>
-    state
-    (check-C-W-exit (keys.left-control keys.w) (should-exit?))
-    (add1-if-true (keys.w translation.y) (translation.y))
-    (sub1-if-true (keys.a translation.x) (translation.x))
-    (sub1-if-true (keys.s translation.y) (translation.y))
-    (add1-if-true (keys.d translation.x) (translation.x))
+    ;; What follows are game -> system transformations
+    (any-direction-keys?   (game.keys) (system.any-direction-keys?))
+    (construct-matrix      (game.translation) (system.translation))
     trce
   ))
 
-(define (add1-if-true condition value)
-  (if condition
-    (if value
-      (add1 value)
-      0)
-    (if value
-      value
-      0)))
-
-(define (sub1-if-true condition value)
-  (if condition
-    (if value
-      (sub1 value)
-      0)
-    (if value
-      value
-      0)))
-
-(define (check-C-W-exit left-control w)
-  (and left-control w))

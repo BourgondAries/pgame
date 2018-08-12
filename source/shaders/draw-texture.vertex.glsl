@@ -7,8 +7,7 @@ out vec2 texture_coord;
 
 uniform mat4 movement;
 
-void main(){
-
-    gl_Position =  movement * vec4(vertex,0,1);
+void main() {
+    gl_Position =  movement * vec4(vertex, 0, 1);
     texture_coord = vertex_uv;
 }

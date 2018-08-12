@@ -2,7 +2,6 @@
 
 (provide draw-white-shape
          draw-texture
-         load-texture*
          draw-texture/uv)
 
 (require racket/list
@@ -78,15 +77,15 @@
 
   (define lx* (real->single-flonum (first bottom-left-uv)))
   (define rx* (real->single-flonum (first top-right-uv)))
-  (define ty* (real->single-flonum (second top-right-uv)))
-  (define by* (real->single-flonum (second bottom-left-uv)))
-    (f32vector lx ty lx* by*
-               rx ty rx* by*
-               lx by lx* ty*
+  (define ty* (real->single-flonum (- 1 (second top-right-uv))))
+  (define by* (real->single-flonum (- 1 (second bottom-left-uv))))
+    (f32vector lx ty lx* ty*
+               rx ty rx* ty*
+               lx by lx* by*
 
-               lx by lx* ty*
-               rx ty rx* by*
-               rx by rx* ty*))
+               lx by lx* by*
+               rx ty rx* ty*
+               rx by rx* by*))
 
 (define/memoize (draw-texture file bottom-left top-right)
   (let* ([tex (load-texture* file)]
@@ -194,7 +193,7 @@
     (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
 
     (glGenerateMipmap GL_TEXTURE_2D)
-    (lambda (x)
+    (lambda (#:transform [transformation-matrix (identity-matrix 4)])
       (glUseProgram (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
                                      (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
 
@@ -212,10 +211,7 @@
                           (list->f32vector
                             (map real->single-flonum
                               (matrix->list
-                                (matrix* (matrix [[1.0 0 0 0]
-                                                  [0 1.0 0 0]
-                                                  [0 0 1.0 0]
-                                                  [0 0 0 1]]))))))
+                                transformation-matrix))))
       (glDrawArrays GL_TRIANGLES 0 6)
 
       (glDisableVertexAttribArray 1)

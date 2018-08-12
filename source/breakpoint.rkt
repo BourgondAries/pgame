@@ -1,4 +1,9 @@
 #lang racket/base
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Plumbing to handle user breaks in the boundary between
+;; reloadable and core. Call 'break' to exit the program
+;; gracefully.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide break breakpoint break-seen?)
 
@@ -6,11 +11,6 @@
 
 (define (break-seen?) +exn:break-seen?+)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Plumbing to handle user breaks in the boundary between
-;; reloadable and core. Call 'break' to exit the program
-;; gracefully.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define +exn:break-seen?+ #f)
 
 ;; Mainly plumbing to handle break signals, not very important
