@@ -18,6 +18,11 @@
 ;; The reason for having with-handlers is to be able
 ;; to catch exceptions using that state so it can
 ;; be replayed.
+;;
+;; This function also acts as the main state machine
+;; handler. Each frame it checks the current game.fsm
+;; and enters the top function. This function is stored
+;; as a symbol and eval'd to get the actual function.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (core state)
   (with-handlers* ([exn:break? (lambda (_) (break state cleanup))])
@@ -25,7 +30,7 @@
       ([break-seen?]         (break state cleanup))
       ([empty? state]        (initialize state))
       ([should-exit? state]  (break state cleanup))
-      (else                  ((meval (nested-hash-ref state 'game 'pump)) state)))))
+      (else                  ((meval (first (nested-hash-ref state 'game 'fsm))) state)))))
 
 ;; Acts as glue between pure an impure. Mainly
 (define (core* state)

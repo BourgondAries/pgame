@@ -13,6 +13,9 @@
 
 (require nested-hash spipe)
 
+(define ((push-fsm symbol) fsm)
+  (cons symbol fsm))
+
 ;; Handles all pure state changes
 (define (pure state)
   (H~>

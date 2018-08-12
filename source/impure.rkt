@@ -74,7 +74,8 @@
 
 (define (draw global-trn sprites iter last-direction mado)
   (trce global-trn)
-  ((animate-texture "data/simple-house.png" '(-1 -1) '(0 0) 3 3) (sub1 iter) iter)
+  ((animate-texture "data/simple-house.png" '(-1 -1) '(0 0) 3 3)
+   (sub1 iter) iter)
   ((draw-texture "data/simple-house.png" '(-0.3 0.3) '(0.3 1.4)) 0)
   (match last-direction
     ('s ((list-ref mado (floor (/ (modulo iter 40) 10))) #:transform global-trn))
