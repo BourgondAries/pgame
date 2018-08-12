@@ -90,13 +90,21 @@
     (draw-texture/uv "data/Madotsuki.png" '(0 0) '(1 1) '(0.75 0.25) '(1.00 0.50))
     ))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; This is the semantic entry point of the program
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (core state)
   (with-handlers* ([exn:break? (lambda (_) (break state cleanup))])
     (cond
-      ([break-seen?]      (break state cleanup))
-      ([empty? state]     (initialize state))
-      ([nested-hash-ref state 'game 'should-exit?] (break state cleanup))
-      (else               (core* state)))))
+      ([break-seen?]         (break state cleanup))
+      ([empty? state]        (initialize state))
+      ([should-exit? state]  (break state cleanup))
+      (else                  (core* state)))))
+
+(define (should-exit? state)
+  (nested-hash-ref state 'game 'should-exit?))
 
 (define-syntax-parser map-glfw-keys
   ([_ key:id ...+]
@@ -123,6 +131,7 @@
 ;; Acts as glue between pure an impure. Mainly
 (define (core* state)
   (H~> state
+    (glfwWindowShouldClose (system.window) (should-exit?))
     (construct-matrix (game.translation) (system.translation))
     (last-key (system.last-direction game.keys.w game.keys.a game.keys.s game.keys.d) (system.last-direction))
     (impure   system)
