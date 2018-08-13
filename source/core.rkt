@@ -52,5 +52,20 @@
     trce
   ))
 
+(require "visualizer.rkt")
 
-;; (("data/madoka.png" 4 4) 13 0)
+(define (menu state)
+  (info^ "Entering visualization state")
+  (H~>
+    state
+    (show-visualization)  ; Blocks by using a subprogram
+
+    ;; We need to reset the keys due to sticky keys,
+    ;; if we didn't, we'd return to this function again.
+    (get-keys   (system.window) (game.keys))
+    (set-false  game.keys.escape)
+
+    ;; Finally, indicate that we no longer want to loop here,
+    ;; return from whence we came.
+    (pop-fsm    game.fsm)
+    ))
