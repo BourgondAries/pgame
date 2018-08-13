@@ -24,7 +24,7 @@
   (glClear GL_COLOR_BUFFER_BIT)
   (H~> state
     ((if* add1) (any-direction-keys? iter) (iter))
-    (draw (transform sprite iter last-direction animation.madotsuki))
+    (draw (transform iter last-direction animation.madotsuki))
     (render-absolute (render.absolute))
     (glfwSwapBuffers (window))
   ))
@@ -79,7 +79,7 @@
         ))
     (identity-matrix 4)))
 
-(define (draw global-trn sprites iter last-direction mado)
+(define (draw global-trn iter last-direction mado)
   (trce global-trn)
   ; ((animate-texture "data/simple-house.png" '(-1 -1) '(0 0) 3 3)
    ; (sub1 iter) iter)

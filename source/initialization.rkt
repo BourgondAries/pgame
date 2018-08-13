@@ -42,20 +42,12 @@
 (define (initialize state)
   (H~>
     (hash)
-    (initialize-glfw  () (system.window))
-    (add-sprites      () (system.sprite))
+    (initialize-glfw    () (system.window))
     (add-sprites*       () (system.animation.madotsuki))
     ((const '())        game.fsm)
     ((push-fsm 'core*)  game.fsm)
     ((const 0)          system.iter)
   ))
-
-(define (add-sprites)
-  (list
-    (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0    0) '(0.25 1))
-    (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0.25 0) '(0.50 1))
-    (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0.50 0) '(0.75 1))
-    (draw-texture/uv "data/sprite2.png" '(0 0) '(1 1) '(0.75 0) '(1    1))))
 
 (define/memoize (animate-texture source bottom-left top-right horizontal-panes vertical-panes)
   (let ([runs
