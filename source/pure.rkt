@@ -59,10 +59,10 @@
 
 (define (last-key last-direction w a s d)
   (cond
-    (w 'w)
     (a 'a)
-    (s 's)
     (d 'd)
+    (w 'w)
+    (s 's)
     (else (or last-direction 'd))))
 
 
