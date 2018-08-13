@@ -11,7 +11,15 @@
 
 (provide (all-defined-out))
 
-(require nested-hash spipe)
+(require racket/list
+         nested-hash spipe)
+
+(define (set-false x) #f)
+
+(define (pop-fsm fsm)
+  (if (empty? fsm)
+    empty
+    (rest fsm)))
 
 (define ((push-fsm symbol) fsm)
   (cons symbol fsm))
