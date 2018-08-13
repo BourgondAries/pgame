@@ -9,9 +9,10 @@
          glfw3 logger memo nested-hash spipe
          "breakpoint.rkt" "drawing.rkt" "impure.rkt" "initialization.rkt" "pure.rkt" "shutdown.rkt")
 
-(define-namespace-anchor a)
-(define ns (namespace-anchor->namespace a))
+(define-namespace-anchor anchor)
+(define ns (namespace-anchor->namespace anchor))
 (define/memoize (meval form) (eval form ns))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; This is the semantic entry point of the program
 ;;
