@@ -27,7 +27,15 @@
     (sub1-if-true (keys.a transform.x) (transform.x))
     (sub1-if-true (keys.s transform.y) (transform.y))
     (add1-if-true (keys.d transform.x) (transform.x))
+    ((if* (push-fsm 'menu)) (keys.escape fsm) (fsm))
+    (renderlist () (render.absolute))
   ))
+
+(define (renderlist)
+  (list
+    '("data/simple-house.png" (-0.3 0.3) (0.3 1.4))
+    ))
+
 
 (define ((if* proc) condition value)
   (if condition

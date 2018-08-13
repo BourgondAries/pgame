@@ -25,8 +25,15 @@
   (H~> state
     ((if* add1) (any-direction-keys? iter) (iter))
     (draw (transform sprite iter last-direction animation.madotsuki))
+    (render-absolute (render.absolute))
     (glfwSwapBuffers (window))
   ))
+
+(define (render-absolute lst)
+  (when lst
+    (for ([i lst])
+      ((draw-texture (first i) (second i) (third i)) 0))
+    ))
 
 
 
@@ -74,9 +81,8 @@
 
 (define (draw global-trn sprites iter last-direction mado)
   (trce global-trn)
-  ((animate-texture "data/simple-house.png" '(-1 -1) '(0 0) 3 3)
-   (sub1 iter) iter)
-  ((draw-texture "data/simple-house.png" '(-0.3 0.3) '(0.3 1.4)) 0)
+  ; ((animate-texture "data/simple-house.png" '(-1 -1) '(0 0) 3 3)
+   ; (sub1 iter) iter)
   (match last-direction
     ('s ((list-ref mado (floor (/ (modulo iter 40) 10))) #:transform global-trn))
     ('a ((list-ref mado (+ 4 (floor (/ (modulo iter 40) 10)))) #:transform global-trn))

@@ -49,6 +49,7 @@
     ;; What follows are game -> system transformations
     (any-direction-keys?   (game.keys) (system.any-direction-keys?))
     (make-global-transform (game.transform) (system.transform))
+    (identity              (game.render.absolute) (system.render.absolute))
     trce
   ))
 
