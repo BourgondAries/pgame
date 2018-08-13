@@ -20,7 +20,7 @@
       (else (if data (string-append "\"" (symbol->string parent) "\" -> \""
                            (string-trim
                              (with-output-to-string
-                               (thunk (write (format "~v" graph))))
+                               (thunk (write (string-take (format "~v" graph) 18))))
                              "\"")
                            "\";")
               ""))))
@@ -31,7 +31,13 @@
           (visualize* data (cdr entry) (car entry))))
       "\n")))
 
-(define (show-visualization graph #:with-data [data #f])
+(define (string-take str n)
+  (define lstr (string->list str))
+  (if (< (length lstr) n)
+    str
+    (list->string (take (string->list str) n))))
+
+(define (show-visualization graph #:with-data [data #t])
   (define temporary-file "temporary/visualizer.dot")
   (with-output-to-file temporary-file #:exists 'replace
     (thunk (display (visualize graph #:with-data data))))
