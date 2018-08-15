@@ -1,6 +1,8 @@
 #lang racket/base
 
-(provide draw-white-shape
+(provide animate-texture
+         draw-white-shape
+         draw-text
          draw-texture
          draw-texture/uv)
 
@@ -87,6 +89,19 @@
                rx ty rx* ty*
                rx by rx* by*))
 
+(define/memoize (animate-texture source bottom-left top-right horizontal-panes vertical-panes)
+  (let ([runs
+    (flatten
+      (for/list ([i horizontal-panes])
+        (for/list ([j vertical-panes])
+          (draw-texture/uv source bottom-left top-right (list (/ i horizontal-panes)
+                                                              (/ j vertical-panes))
+                                                        (list (/ (add1 i) horizontal-panes)
+                                                              (/ (add1 j) vertical-panes))))))])
+    (lambda (i j #:transform [transform (identity-matrix 4)])
+      ((list-ref runs (+ (modulo j vertical-panes) (* vertical-panes (modulo i horizontal-panes)))) #:transform transform)
+      )))
+
 (define/memoize (draw-texture file bottom-left top-right)
   (let* ([tex (load-texture* file)]
          [vertexarray   (u32vector-ref (glGenVertexArrays 1) 0)]
@@ -152,6 +167,27 @@
       (glDisableVertexAttribArray 1)
       (glDisableVertexAttribArray 0)
       )))
+
+(define (translate x)
+  (matrix [[1 0 0 0]
+           [0 1 0 0]
+           [0 0 1 0]
+           [x 0 0 1]]))
+
+(define/memoize (draw-text text-sheet
+                           bottom-left  top-right
+                           horizontal   vertical)
+  (let ([animation (animate-texture text-sheet bottom-left top-right horizontal vertical)]
+        [x-width (- (first top-right) (first bottom-left))])
+    (lambda (text)
+      (for ([ch text]
+            [n (in-naturals)])
+        (let* ([i (modulo (- (char->integer ch) 32) horizontal)]
+               [j (sub1 (- vertical (floor (/ (- (char->integer ch) 32) horizontal))))])
+          (dbug `(accessing ,ch : ,i ,j))
+          (animation i j #:transform (translate (* n x-width)))
+           )))))
+
 
 (define/memoize (draw-texture/uv file bottom-left    top-right
                                       bottom-left-uv top-right-uv)

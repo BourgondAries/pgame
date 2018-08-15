@@ -12,7 +12,8 @@
 (provide (all-defined-out))
 
 (require racket/list
-         nested-hash spipe)
+         nested-hash spipe
+         syntax/parse/define (for-syntax racket/base))
 
 (define (set-false x) #f)
 
@@ -36,14 +37,33 @@
     (sub1-if-true (keys.s transform.y) (transform.y))
     (add1-if-true (keys.d transform.x) (transform.x))
     ((if* (push-fsm 'menu)) (keys.escape fsm) (fsm))
-    (renderlist () (render.absolute))
   ))
 
-(define (renderlist)
-  (list
-    '("data/simple-house.png" (-0.3 0.3) (0.3 1.4))
-    ))
+(define-syntax-parser defines**
+  ([_ (name:id val:expr) ...+]
+   #'(begin (define name val) ...)))
 
+;; rect: #s(lx by rx ty)
+(define (collides? rect-1 rect-2)
+  (define (collides?* rect-1 rect-2)
+    (defines**
+      (r1-l (first  rect-1))
+      (r1-b (second rect-1))
+      (r1-r (third  rect-1))
+      (r1-t (fourth rect-1))
+      (r2-l (first  rect-2))
+      (r2-b (second rect-2))
+      (r2-r (third  rect-2))
+      (r2-t (fourth rect-2)))
+    (and
+      (or
+        (< r1-l r2-l r1-r)
+        (< r1-l r2-r r1-r))
+      (or
+        (< r1-b r2-b r1-t)
+        (< r1-b r2-t r1-t))))
+  (or (collides?* rect-1 rect-2)
+      (collides?* rect-2 rect-1)))
 
 (define ((if* proc) condition value)
   (if condition

@@ -31,9 +31,10 @@
   (glEnable GL_MULTISAMPLE)
   (glBlendFunc GL_ONE GL_ONE_MINUS_SRC_ALPHA)
   (glDisable GL_DEPTH_TEST)
-  (glClearColor 0.3 0.3 0.3 0.5)
+  (glClearColor 0.3 0.8 0.3 0.5)
   (glfwSetInputMode window GLFW_STICKY_KEYS GL_TRUE)
   ; (glPolygonMode GL_FRONT_AND_BACK GL_LINE)
+  (glPolygonMode GL_FRONT GL_FILL)
   ;;
   (collect-garbage 'incremental)
   ;;
@@ -48,19 +49,6 @@
     ((push-fsm 'core*)  game.fsm)
     ((const 0)          system.iter)
   ))
-
-(define/memoize (animate-texture source bottom-left top-right horizontal-panes vertical-panes)
-  (let ([runs
-    (flatten
-      (for/list ([i horizontal-panes])
-        (for/list ([j vertical-panes])
-          (draw-texture/uv source bottom-left top-right (list (/ i horizontal-panes)
-                                                              (/ j vertical-panes))
-                                                        (list (/ (add1 i) horizontal-panes)
-                                                              (/ (add1 j) vertical-panes))))))])
-    (lambda (i j #:transform [transform (identity-matrix 4)])
-      ((list-ref runs (+ (modulo j vertical-panes) (* vertical-panes (modulo i horizontal-panes)))) #:transform transform)
-      )))
 
 (define (add-sprites*)
   (list
