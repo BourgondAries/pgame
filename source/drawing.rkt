@@ -168,25 +168,30 @@
       (glDisableVertexAttribArray 0)
       )))
 
-(define (translate x)
+(define (translate x y)
   (matrix [[1 0 0 0]
            [0 1 0 0]
            [0 0 1 0]
-           [x 0 0 1]]))
+           [x y 0 1]]))
 
 (define/memoize (draw-text text-sheet
                            bottom-left  top-right
                            horizontal   vertical)
   (let ([animation (animate-texture text-sheet bottom-left top-right horizontal vertical)]
-        [x-width (- (first top-right) (first bottom-left))])
+        [x-width (- (first top-right) (first bottom-left))]
+        [height (- (second top-right) (second bottom-left))])
     (lambda (text)
-      (for ([ch text]
-            [n (in-naturals)])
-        (let* ([i (modulo (- (char->integer ch) 32) horizontal)]
-               [j (sub1 (- vertical (floor (/ (- (char->integer ch) 32) horizontal))))])
-          (dbug `(accessing ,ch : ,i ,j))
-          (animation i j #:transform (translate (* n x-width)))
-           )))))
+      (for/fold ([nl 0]
+                 [x 0])
+                ([ch text]
+                 [n (in-naturals)])
+        (if (char=? ch #\newline)
+          (values (add1 nl) 0)
+          (let* ([i (modulo (- (char->integer ch) 32) horizontal)]
+                 [j (sub1 (- vertical (floor (/ (- (char->integer ch) 32) horizontal))))])
+            (animation i j #:transform (translate (* x x-width) (* -1 nl height)))
+            (values nl (add1 x))
+             ))))))
 
 
 (define/memoize (draw-texture/uv file bottom-left    top-right
