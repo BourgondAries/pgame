@@ -77,13 +77,10 @@
     (hash-ref keys 's #f)
     (hash-ref keys 'd #f)))
 
-(define (last-key last-direction w a s d)
-  (cond
-    (a 'a)
-    (d 'd)
-    (w 'w)
-    (s 's)
-    (else (or last-direction 'd))))
+(define (last-key last-direction wasd)
+  (if wasd
+    wasd
+    (or last-direction 'd)))
 
 
 (define (add1* n) (if n (add1 n) 0))

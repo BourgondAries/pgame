@@ -19,35 +19,20 @@
          glfw3 logger memo nested-hash spipe
          "breakpoint.rkt" "drawing.rkt" "initialization.rkt" "pure.rkt")
 
-;; Handles all impure state changes
-(define (impure state)
-  (glClear GL_COLOR_BUFFER_BIT)
-  (H~> state
-    ((if* add1) (any-direction-keys? iter) (iter))
-    (render-absolute ())
-    (draw (transform iter last-direction animation.madotsuki))
-    (draw-relative (transform render.relative))
-    (drawtext (iter))
-    (glfwSwapBuffers (window))
-  ))
+
+(define (clear-graphics)
+  (glClear GL_COLOR_BUFFER_BIT))
 
 (define (drawtext tick)
   ((animate-texture "data/text.png" '(-0.5 -0.5) '(0 0) 14 3) (floor (/ tick 12))
                                                               (- 2 (floor (/ tick (* 12 14)))))
-  ; ((draw-text "data/text/main-text.png" '(-1 0.0) '(-0.8 0.2) 14 3)
-  ;  "!\"#$%&'()*+,-./0123456789:;<=>?@"
-  ;  )
-  ((draw-text "data/text/main-text.png" '(-1 0.0) '(-0.9 0.2) 24 4)
-   "No CONTOL"
+  ((draw-text "data/text/main-text2.png" '(-1 0.0) '(-0.9 0.2) 19 5)
+   "Nani the fuck\nis going on?"
    )
-  ; ((draw-text "data/text.png" '(0.5 0.5) '(1 1) 14 3)
-  ;  ":"
-  ;  )
   )
 
 (define (render-absolute)
-  ((draw-texture "data/simple-house.png" '(-0.3 0.3) '(0.3 1.4)) 0)
-  )
+  ((draw-texture "data/simple-house.png" '(-0.3 0.3) '(0.3 1.4)) 0))
 
 
 
@@ -96,13 +81,14 @@
 (define (draw global-trn iter last-direction mado)
   ; ((animate-texture "data/simple-house.png" '(-1 -1) '(0 0) 3 3)
    ; (sub1 iter) iter)
+  (trce global-trn iter last-direction)
   (match last-direction
     ('s ((list-ref mado (floor (/ (modulo iter 40) 10))) #:transform global-trn))
     ('a ((list-ref mado (+ 4 (floor (/ (modulo iter 40) 10)))) #:transform global-trn))
     ('w ((list-ref mado (+ 8 (floor (/ (modulo iter 40) 10)))) #:transform global-trn))
     ('d ((list-ref mado (+ 12 (floor (/ (modulo iter 40) 10)))) #:transform global-trn))
-    (_  (erro "Unable to find direction")))
-  )
+    (_  ((list-ref mado (floor (/ (modulo iter 40) 10)))))
+  ))
 
 (define (draw-relative global-trn mado)
   (when mado

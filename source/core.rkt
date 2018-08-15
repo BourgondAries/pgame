@@ -33,25 +33,43 @@
       ([should-exit? state]  (break state cleanup))
       (else                  ((meval (first (nested-hash-ref state 'game 'fsm))) state)))))
 
-;; Acts as glue between pure an impure. Mainly
 (define (core* state)
   (H~> state
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    (impure system)  ;; Purely impure game logic              ;;
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;; What follows are system -> game transformations
-    (glfwWindowShouldClose (system.window) (should-exit?))
-    (last-key              (system.last-direction game.keys.w game.keys.a game.keys.s game.keys.d) (system.last-direction))
-    (get-keys              (system.window) (game.keys))
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    (pure   game) ;; Pure game logic. All else is glue/impure ;;
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;; What follows are game -> system transformations
-    (any-direction-keys?   (game.keys) (system.any-direction-keys?))
-    (make-global-transform (game.transform) (system.transform))
-    (identity              (game.render.absolute) (system.render.absolute))
-    trce
+    (clear-graphics ())
+    ((if* add1)       (game.any-direction-keys?
+                       game.tick.direction-keys)
+                      (game.tick.direction-keys))
+    (render-absolute ())
+    (draw             (system.transform game.tick.direction-keys system.last-direction system.animation.madotsuki))
+    (draw-relative (system.transform system.render.relative))
+    (drawtext (game.tick.direction-keys))
+    (glfwSwapBuffers (system.window))
+    ;; Input handling
+    (get-keys               (system.window) (game.keys))
+    (glfwWindowShouldClose  (system.window) (should-exit?))
+    (collect-wasd           (game.keys) (game.keys.wasd))
+    (last-key               (system.last-direction game.keys.wasd) (system.last-direction))
+    (pure   game)
+    ((lambda (game)
+       (H~> game
+          (add1 tick.iteration)
+          ))
+     game)
+    (check-door-collision    (game.transform.x game.transform.y)           (game.collides?))
+    ((if* (push-fsm 'menu))  (game.collides? game.fsm)  (game.fsm))
+    (any-direction-keys?     (game.keys)                (game.any-direction-keys?))
+    (make-global-transform   (game.transform)           (system.transform))
   ))
+
+(define (collect-wasd keys)
+  (or
+    (if (hash-ref keys 's #f) 's #f)
+    (if (hash-ref keys 'a #f) 'a #f)
+    (if (hash-ref keys 'w #f) 'w #f)
+    (if (hash-ref keys 'd #f) 'd #f)))
+
+(define (check-door-collision x y)
+  (and (< -20 x 20) (> y 118)))
 
 (require "visualizer.rkt")
 
