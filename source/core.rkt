@@ -63,10 +63,10 @@
 
 (define (collect-wasd keys)
   (or
-    (if (hash-ref keys 's #f) 's #f)
     (if (hash-ref keys 'a #f) 'a #f)
+    (if (hash-ref keys 'd #f) 'd #f)
     (if (hash-ref keys 'w #f) 'w #f)
-    (if (hash-ref keys 'd #f) 'd #f)))
+    (if (hash-ref keys 's #f) 's #f)))
 
 (define (check-door-collision x y)
   (and (< -20 x 20) (> y 118)))
