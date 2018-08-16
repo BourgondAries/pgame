@@ -25,6 +25,9 @@
 (define ((push-fsm symbol) fsm)
   (cons symbol fsm))
 
+(define ((set-fsm symbol) fsm)
+  (cons symbol (rest fsm)))
+
 ;; Handles all pure state changes
 (define (pure state)
   (H~>

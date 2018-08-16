@@ -7,6 +7,7 @@
 
 
 (define (normalize graph) (sort (hash->list graph) symbol<? #:key car))
+(define (normalize2 graph) (reverse (sort (hash->list graph) symbol<? #:key car)))
 
 (struct A (parent label value id) #:prefab)
 (define (visualize2 pid label graph id)
@@ -14,7 +15,7 @@
     ([hash? graph]
      (for/fold ([build (list (A pid label (void) id))]
                 [value (add1 id)])
-               ([entry (hash->list graph)])
+               ([entry (normalize2 graph)])
        (let-values ([(build* count*) (visualize2 id (car entry) (cdr entry) value)])
          (values (cons build* build)
                  count*))))

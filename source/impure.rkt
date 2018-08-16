@@ -27,14 +27,10 @@
   ((animate-texture "data/text.png" '(-0.5 -0.5) '(0 0) 14 3) (floor (/ tick 12))
                                                               (- 2 (floor (/ tick (* 12 14)))))
   ((draw-text "data/text/main-text2.png" '(-1 0.0) '(-0.9 0.2) 19 5)
-   "Nani the fuck\nis going on?"
-   )
-  )
+   "Nani the fuck\nis going on?"))
 
 (define (render-absolute)
   ((draw-texture "data/simple-house.png" '(-0.3 0.3) '(0.3 1.4)) 0))
-
-
 
 (define (get-keys window)
   (define-syntax-parser map-glfw-keys

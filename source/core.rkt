@@ -35,18 +35,17 @@
 
 (define (core* state)
   (H~> state
-    (clear-graphics ())
+    (clear-graphics   ())
     ((if* add1)       (game.any-direction-keys?
                        game.tick.direction-keys)
                       (game.tick.direction-keys))
-    (render-absolute ())
+    (render-absolute  ())
     (draw             (system.transform game.tick.direction-keys system.last-direction system.animation.madotsuki))
-    (draw-relative (system.transform system.render.relative))
-    (drawtext (game.tick.direction-keys))
-    (glfwSwapBuffers (system.window))
-    ;; Input handling
+    (draw-relative    (system.transform system.render.relative))
+    (drawtext               (game.tick.direction-keys))
+    (glfwSwapBuffers        (system.window))
     (get-keys               (system.window) (game.keys))
-    (glfwWindowShouldClose  (system.window) (should-exit?))
+    (glfwWindowShouldClose  (system.window) (game.should-exit?))
     (collect-wasd           (game.keys) (game.keys.wasd))
     (last-key               (system.last-direction game.keys.wasd) (system.last-direction))
     (pure   game)
@@ -55,11 +54,46 @@
           (add1 tick.iteration)
           ))
      game)
-    (check-door-collision    (game.transform.x game.transform.y)           (game.collides?))
-    ((if* (push-fsm 'menu))  (game.collides? game.fsm)  (game.fsm))
-    (any-direction-keys?     (game.keys)                (game.any-direction-keys?))
-    (make-global-transform   (game.transform)           (system.transform))
+    (check-door-collision       (game.transform.x game.transform.y)  (game.collides?))
+    ((if* (push-fsm 'top-map))  (game.collides? game.fsm)            (game.fsm))
+    (any-direction-keys?        (game.keys)                 (game.any-direction-keys?))
+    (make-global-transform      (game.transform)            (system.transform))
   ))
+
+(define (top-map state)
+  (H~>
+    state
+    ((const -100) game.transform.y)
+    ((set-fsm 'top-map2)  game.fsm)
+    ))
+
+(define (top-map2 state)
+  (H~>
+    state
+    (clear-graphics   ())
+    ((if* add1)       (game.any-direction-keys?
+                       game.tick.direction-keys)
+                      (game.tick.direction-keys))
+    (render-absolute  ())
+    (draw             (system.transform game.tick.direction-keys system.last-direction system.animation.madotsuki))
+    (draw-relative    (system.transform system.render.relative))
+    ; (drawtext               (game.tick.direction-keys))
+    (glfwSwapBuffers        (system.window))
+    (get-keys               (system.window) (game.keys))
+    (glfwWindowShouldClose  (system.window) (game.should-exit?))
+    (collect-wasd           (game.keys) (game.keys.wasd))
+    (last-key               (system.last-direction game.keys.wasd) (system.last-direction))
+    (pure   game)
+    ((lambda (game)
+       (H~> game
+          (add1 tick.iteration)
+          ))
+     game)
+    (check-door-collision       (game.transform.x game.transform.y)  (game.collides?))
+    ((if* (push-fsm 'top-map))  (game.collides? game.fsm)            (game.fsm))
+    (any-direction-keys?        (game.keys)                 (game.any-direction-keys?))
+    (make-global-transform      (game.transform)            (system.transform))
+    ))
 
 (define (collect-wasd keys)
   (or
@@ -69,7 +103,7 @@
     (if (hash-ref keys 's #f) 's #f)))
 
 (define (check-door-collision x y)
-  (and (< -20 x 20) (> y 118)))
+  (and (< -20 x 20) (> 130 y 100)))
 
 (require "visualizer.rkt")
 
