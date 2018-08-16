@@ -19,32 +19,34 @@
          (values (cons build* build)
                  count*))))
     (else
-      (values (A pid label graph id) (add1 id)))))
+      (values (A pid label graph id) (+ 2 id)))))
 
 (define (escape x)
   (string-trim
     (with-output-to-string
-      (thunk (write (string-take (format "~v" x) 18))))
+      (thunk (write (string-take (format "~a" x) 18))))
     "\"")
   )
 
 (define (gvis2 graph)
   (define-values (g _) (visualize2 0 'root graph 0))
-  (string-append "digraph G { " (annota->dor g) (annotated->dot g) " }"))
+  (string-append "digraph G { node [shape=oval]; " (annota->dor g) (annotated->dot g) " }"))
 
 (define (annotated->dot agra)
   (cond
     ([list? agra]  (apply string-append (map annotated->dot agra)))
     ([A? agra]     (cond
-                     ([void? (A-value agra)] (string-append (escape (A-parent agra)) " -> " (escape (A-id agra)) ";"))
-                     (else                   (string-append (escape (A-parent agra)) " -> " (escape (A-id agra)) "[label=\"" (escape (A-value agra)) "\"];"))))
+                     ([= (A-parent agra) (A-id agra)] "") ; Root node
+                     ([void? (A-value agra)] (string-append (escape (A-parent agra)) " -> " (escape (A-id agra)) ";\n"))
+                     (else                   (string-append (escape (A-parent agra)) " -> " (escape (A-id agra)) "-> " (escape (add1 (A-id agra))) ";\n"
+                                                            (escape (add1 (A-id agra))) "[style=filled, fillcolor=orange, shape=box, label=\"" (escape (A-value agra)) "\"];\n"))))
     (else (crit "Unable to read agraph"))
   ))
 
 (define (annota->dor agra)
   (cond
     ([list? agra]  (apply string-append (map annota->dor agra)))
-    ([A? agra]     (string-append (escape (A-id agra)) "[label=\"" (escape (A-label agra)) "\"];"))
+    ([A? agra]     (string-append (escape (A-id agra)) "[style=filled, fillcolor=green, label=\"" (escape (A-label agra)) "\"];\n"))
     (else (crit "Unable to read agraph"))
   ))
 
