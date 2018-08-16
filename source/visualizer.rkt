@@ -8,6 +8,18 @@
 
 (define (normalize graph) (sort (hash->list graph) symbol<? #:key car))
 
+(define (visualize2 pid label graph id)
+  (cond
+    ([hash? graph]
+     (for/fold ([build (list (list pid label #f id))]
+                [value (add1 id)])
+               ([entry (hash->list graph)])
+       (let-values ([(build* count*) (visualize2 id (car entry) (cdr entry) value)])
+         (values (cons build* build)
+                 count*))))
+    (else
+      (values (list pid label graph id) (add1 id)))))
+
 (define (visualize graph #:with-data [data #f])
   (define (visualize* data graph parent)
     (cond
