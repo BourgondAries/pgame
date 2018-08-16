@@ -8,17 +8,45 @@
 
 (define (normalize graph) (sort (hash->list graph) symbol<? #:key car))
 
+(struct A (parent label value id) #:prefab)
 (define (visualize2 pid label graph id)
   (cond
     ([hash? graph]
-     (for/fold ([build (list (list pid label #f id))]
+     (for/fold ([build (list (A pid label (void) id))]
                 [value (add1 id)])
                ([entry (hash->list graph)])
        (let-values ([(build* count*) (visualize2 id (car entry) (cdr entry) value)])
          (values (cons build* build)
                  count*))))
     (else
-      (values (list pid label graph id) (add1 id)))))
+      (values (A pid label graph id) (add1 id)))))
+
+(define (escape x)
+  (string-trim
+    (with-output-to-string
+      (thunk (write (string-take (format "~v" x) 18))))
+    "\"")
+  )
+
+(define (gvis2 graph)
+  (define-values (g _) (visualize2 0 'root graph 0))
+  (string-append "digraph G { " (annota->dor g) (annotated->dot g) " }"))
+
+(define (annotated->dot agra)
+  (cond
+    ([list? agra]  (apply string-append (map annotated->dot agra)))
+    ([A? agra]     (cond
+                     ([void? (A-value agra)] (string-append (escape (A-parent agra)) " -> " (escape (A-id agra)) ";"))
+                     (else                   (string-append (escape (A-parent agra)) " -> " (escape (A-id agra)) "[label=\"" (escape (A-value agra)) "\"];"))))
+    (else (crit "Unable to read agraph"))
+  ))
+
+(define (annota->dor agra)
+  (cond
+    ([list? agra]  (apply string-append (map annota->dor agra)))
+    ([A? agra]     (string-append (escape (A-id agra)) "[label=\"" (escape (A-label agra)) "\"];"))
+    (else (crit "Unable to read agraph"))
+  ))
 
 (define (visualize graph #:with-data [data #f])
   (define (visualize* data graph parent)
@@ -50,6 +78,12 @@
     (list->string (take (string->list str) n))))
 
 (define (show-visualization graph #:with-data [data #t])
+  ; (define (call-with-values (thunk (visualize2 0 'root graph 0)) (lambda (x y) (annotated->dot x)))
+  (define temporary-file2 "temporary/visualizer2.dot")
+  (with-output-to-file temporary-file2 #:exists 'replace
+    (thunk (display (gvis2 graph))))
+  (system* "/usr/bin/env" "bash" "-c" "dot -T eps temporary/visualizer2.dot > temporary/visualizer2.eps && evince temporary/visualizer2.eps")
+
   (define temporary-file "temporary/visualizer.dot")
   (with-output-to-file temporary-file #:exists 'replace
     (thunk (display (visualize graph #:with-data data))))
