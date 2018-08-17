@@ -61,26 +61,18 @@
   ))
 
 (define (top-map state)
-  ; (define copy (copy-framebuffer))
-  ; (define c (copy-framebuffer))
-  (glReadBuffer GL_BACK)
-  ; (define tex (u32vector-ref (glGenTextures 1) 0))
-  ; (glBindTexture GL_TEXTURE_2D tex)
-  ; (glCopyTexImage2D GL_TEXTURE_2D 0 GL_RGB 0 0 800 600 0)
-  ; (define c 0)
-  (define tex (load-texture* "data/800x600.png"))
-  (glBindTexture GL_TEXTURE_2D tex)
-  (glCopyTexSubImage2D GL_TEXTURE_2D 0 0 0 0 0 800 600)
-  ; (glCopyTexImage2D GL_TEXTURE_2D 0 GL_RGB 0 0 800 600 0)
+
+  (define tex2 (draw-previous-frame 800 600))
+
   (erro (glGetError))
   (glClearColor 0. 0. 0. 0.)
   (for ([i 120])
     (glClear GL_COLOR_BUFFER_BIT)
-    (draw-texture-obj tex)
+    (tex2)
     (
       (fade '((-1 -1 0) (-1 1 0) (1 -1 0)
               (1 -1 0)  (-1 1 0) (1 1 0)))
-        (/ i 120)
+        (/ i 15)
     )
     (H~>
       state

@@ -2,6 +2,8 @@
 
 (provide animate-texture
          draw-white-shape
+         draw-previous-frame
+         create-blank-texture
          load-texture*
          fade
          copy-framebuffer
@@ -117,6 +119,26 @@
   (trce (glGetError))
   color-texture
   )
+
+(define (draw-previous-frame x y)
+  (define tex (create-blank-texture x y))
+  (glReadBuffer GL_BACK)
+  (glCopyTexSubImage2D GL_TEXTURE_2D 0 0 0 0 0 x y)
+  (lambda ()
+    (draw-texture-obj tex)
+    ))
+
+(define (create-blank-texture w h)
+  (define tex (u32vector-ref (glGenTextures 1) 0))
+  (glBindTexture GL_TEXTURE_2D tex)
+  (glPixelStorei GL_UNPACK_ALIGNMENT 1)
+  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
+  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
+  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
+  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
+  ; (glTexEnvf GL_TEXTURE_ENV GL_TEXTURE_ENV_MODE GL_MODULATE)
+  (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA 800 600 0 GL_RGBA GL_UNSIGNED_BYTE 0)
+  tex)
 
 (define (draw-texture-obj tx)
   (define program-id (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
