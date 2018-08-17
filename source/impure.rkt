@@ -77,7 +77,6 @@
 (define (draw global-trn iter last-direction mado)
   ; ((animate-texture "data/simple-house.png" '(-1 -1) '(0 0) 3 3)
    ; (sub1 iter) iter)
-  (trce global-trn iter last-direction)
   (match last-direction
     ('s ((list-ref mado (floor (/ (modulo iter 40) 10))) #:transform global-trn))
     ('a ((list-ref mado (+ 4 (floor (/ (modulo iter 40) 10)))) #:transform global-trn))
