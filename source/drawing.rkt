@@ -2,6 +2,8 @@
 
 (provide animate-texture
          draw-white-shape
+         fade
+         copy-framebuffer
          draw-text
          draw-texture
          draw-texture/uv)
@@ -15,6 +17,35 @@
 
 (define/memoize (create-program* vertex fragment) #:finalize glDeleteProgram
   (create-program vertex fragment))
+
+(define/memoize (fade points)
+  (let* ([vertexarray   (u32vector-ref (glGenVertexArrays 1) 0)]
+         [vertexbuffer  (u32vector-ref (glGenBuffers      1) 0)]
+         ;;
+         [program-id    (create-program* (load-shader* "source/shaders/fade.vertex.glsl"   GL_VERTEX_SHADER)
+                                         (load-shader* "source/shaders/fade.fragment.glsl" GL_FRAGMENT_SHADER))]
+         ;;
+         [move-loc      (glGetUniformLocation program-id "opacity")]
+         [point-length  (length points)]
+         [points*       (list->f32vector (map real->single-flonum (flatten points)))])
+    (register-finalizer vertexarray  (lambda (x) (glDeleteVertexArrays 1 (u32vector x))))
+    (register-finalizer vertexbuffer (lambda (x) (glDeleteBuffers      1 (u32vector x))))
+    (glBindVertexArray vertexarray)
+    (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
+    (glBufferData GL_ARRAY_BUFFER
+                  (* (length points) 3 4)
+                  (f32vector->cpointer points*)
+                  GL_STATIC_DRAW)
+    (lambda (op)
+      (glUseProgram (create-program* (load-shader* "source/shaders/fade.vertex.glsl"   GL_VERTEX_SHADER)
+                                     (load-shader* "source/shaders/fade.fragment.glsl" GL_FRAGMENT_SHADER)))
+      (glEnableVertexAttribArray 0)
+      (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
+      (glVertexAttribPointer 0 3 GL_FLOAT #f 0 #f)
+      (glUniform1f move-loc (real->double-flonum op))
+      (glDrawArrays GL_TRIANGLES  0 point-length)
+      (glDisableVertexAttribArray 0)
+      )))
 
 ;; Draws a white shape, takes in a set of triangles.
 (define/memoize (draw-white-shape points)
@@ -53,6 +84,34 @@
       (glDrawArrays GL_TRIANGLES  0 point-length)
       (glDisableVertexAttribArray 0)
       )))
+
+(define (copy-framebuffer)
+  (define fbo (u32vector-ref (glGenFramebuffers 1) 0))
+  (glBindFramebuffer GL_DRAW_FRAMEBUFFER fbo)
+
+  (define color-texture (u32vector-ref (glGenTextures 1) 0))
+  (define depth-texture (u32vector-ref (glGenTextures 1) 0))
+  (trce color-texture depth-texture)
+
+  (glBindTexture GL_TEXTURE_2D color-texture)
+  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
+  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
+  (glTexImage2D GL_TEXTURE_2D 0 GL_RGB 1 1 0 GL_RGB GL_FLOAT 0)
+  (glFramebufferTexture2D GL_DRAW_FRAMEBUFFER GL_COLOR_ATTACHMENT0 GL_TEXTURE_2D color-texture 0)
+
+  (when (not (= GL_FRAMEBUFFER_COMPLETE (glCheckFramebufferStatus GL_FRAMEBUFFER)))
+    (ftal^ "Framebuffer unable to complete")
+    (exit 1))
+
+  (glBindFramebuffer GL_DRAW_FRAMEBUFFER 0)
+  (glBindFramebuffer GL_READ_FRAMEBUFFER 0)
+  (glBindFramebuffer GL_DRAW_FRAMEBUFFER fbo)
+  (glBlitFramebuffer 0 0 1 1 0 0 1 1 GL_COLOR_BUFFER_BIT GL_NEAREST)
+  (glBindFramebuffer GL_READ_FRAMEBUFFER 0)
+  (glBindFramebuffer GL_DRAW_FRAMEBUFFER 0)
+
+  (trce (glGetError))
+  )
 
 (define/memoize (load-texture* file) #:finalize (lambda (x) (glDeleteTextures 1 (u32vector x)) (erro 'del) (exit))
   (load-texture file #:mipmap #t))

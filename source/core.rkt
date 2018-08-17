@@ -61,11 +61,26 @@
   ))
 
 (define (top-map state)
+  (define copy (copy-framebuffer))
+  (for ([i 120])
+    (glClear GL_COLOR_BUFFER_BIT)
+    (
+      (fade '((-1 -1 0) (-1 1 0) (1 -1 0)
+              (1 -1 0)  (-1 1 0) (1 1 0)))
+        (/ i 30)
+    )
+    (H~>
+      state
+      (glfwSwapBuffers (system.window)))
+    )
   (H~>
     state
+    (glfwSwapBuffers (system.window))
     ((const -100) game.transform.y)
     ((set-fsm 'top-map2)  game.fsm)
-    ))
+    ((thunk (sleep 3)) ())
+    )
+  )
 
 (define (top-map2 state)
   (H~>
