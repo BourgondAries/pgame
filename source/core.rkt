@@ -64,30 +64,32 @@
 
   (define tex2 (draw-previous-frame 800 600))
 
-  (erro (glGetError))
   (glClearColor 0. 0. 0. 0.)
-  (for ([i 120])
+  (for ([i 30])
     (glClear GL_COLOR_BUFFER_BIT)
     (tex2)
-    (
-      (fade '((-1 -1 0) (-1 1 0) (1 -1 0)
-              (1 -1 0)  (-1 1 0) (1 1 0)))
-        (/ i 15)
-    )
+    ((fade) (/ i 30))
     (H~>
       state
       (glfwSwapBuffers (system.window)))
     )
-  (exit)
-  (sleep 3)
+  (glClearColor 0.3 0.8 0.3 0.)
   (H~>
     state
     (glfwSwapBuffers (system.window))
     ((const -100) game.transform.y)
+    ((const 120)  game.tick.to-zero)
     ((set-fsm 'top-map2)  game.fsm)
-    ((thunk (sleep 1)) ())
     )
   )
+
+(define (sub1-to-0 value)
+  (if (> value 0)
+    (sub1 value)
+    0))
+
+(define (fade/invert value)
+  ((fade) (max 0 (/ value 120))))
 
 (define (top-map2 state)
   (H~>
@@ -100,11 +102,14 @@
     (draw             (system.transform game.tick.direction-keys system.last-direction system.animation.madotsuki))
     (draw-relative    (system.transform system.render.relative))
     ; (drawtext               (game.tick.direction-keys))
+    (fade/invert            (game.tick.to-zero))
+    (trce game.tick.to-zero)
     (glfwSwapBuffers        (system.window))
     (get-keys               (system.window) (game.keys))
     (glfwWindowShouldClose  (system.window) (game.should-exit?))
     (collect-wasd           (game.keys) (game.keys.wasd))
     (last-key               (system.last-direction game.keys.wasd) (system.last-direction))
+    (sub1-to-0              game.tick.to-zero)
     (pure   game)
     ((lambda (game)
        (H~> game
