@@ -60,32 +60,24 @@
     (make-global-transform      (game.transform)            (system.transform))
   ))
 
-(define (top-map state)
-
+(define (do-fade window)
   (define tex2 (draw-previous-frame 800 600))
-
   (glClearColor 0. 0. 0. 0.)
   (for ([i 40])
     (glClear GL_COLOR_BUFFER_BIT)
     (tex2)
     ((fade) (/ i 30))
-    (H~>
-      state
-      (glfwSwapBuffers (system.window)))
-    )
-  (glClearColor 0.3 0.8 0.3 0.)
-  (H~>
-    state
-    (glfwSwapBuffers (system.window))
+    (glfwSwapBuffers window))
+  (glClearColor 0.3 0.8 0.3 0.))
+
+(node top-map state
+  (enter
+    (do-fade (system.window))
     ((const -100) game.transform.y)
     ((const 120)  game.tick.to-zero)
-    ((set-fsm 'top-map2)  game.fsm)
     )
-  )
-
-(define (top-map2 state)
-  (H~>
-    state
+  (pre)
+  (pure
     (clear-graphics   ())
     ((if* add1)       (game.any-direction-keys?
                        game.tick.direction-keys)
@@ -111,7 +103,11 @@
     ((if* (push-fsm 'top-map))  (game.collides? game.fsm)            (game.fsm))
     (any-direction-keys?        (game.keys)                 (game.any-direction-keys?))
     (make-global-transform      (game.transform)            (system.transform))
-    ))
+    )
+  (post)
+  (exit)
+  )
+
 
 (define (collect-wasd keys)
   (or
@@ -141,9 +137,9 @@
    #'(begin
        (define (name state)
          (trce^ 'name)
-         enter-body ...
          (H~>
            state
+           enter-body ...
            ((set-fsm 'name-core) game.fsm)))
        (define (name-core state)
          (H~>
