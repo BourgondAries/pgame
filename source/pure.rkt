@@ -25,6 +25,12 @@
 (define ((push-fsm symbol) fsm)
   (cons symbol fsm))
 
+(define ((step-to value) x)
+  (cond
+    ([> x value] (sub1 x))
+    ([= x value] x)
+    ([< x value] (add1 x))))
+
 (define ((set-fsm symbol) fsm)
   (cons symbol (rest fsm)))
 
@@ -39,6 +45,7 @@
     (sub1-if-true (keys.a transform.x) (transform.x))
     (sub1-if-true (keys.s transform.y) (transform.y))
     (add1-if-true (keys.d transform.x) (transform.x))
+    (and (keys.d keys.b keys.g keys.escape) (dbg-esc?))
     ((if* (push-fsm 'menu)) (keys.escape fsm) (fsm))
   ))
 

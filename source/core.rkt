@@ -65,7 +65,7 @@
   (define tex2 (draw-previous-frame 800 600))
 
   (glClearColor 0. 0. 0. 0.)
-  (for ([i 30])
+  (for ([i 40])
     (glClear GL_COLOR_BUFFER_BIT)
     (tex2)
     ((fade) (/ i 30))
@@ -83,14 +83,6 @@
     )
   )
 
-(define (sub1-to-0 value)
-  (if (> value 0)
-    (sub1 value)
-    0))
-
-(define (fade/invert value)
-  ((fade) (max 0 (/ value 120))))
-
 (define (top-map2 state)
   (H~>
     state
@@ -101,7 +93,6 @@
     (render-absolute  ())
     (draw             (system.transform game.tick.direction-keys system.last-direction system.animation.madotsuki))
     (draw-relative    (system.transform system.render.relative))
-    ; (drawtext               (game.tick.direction-keys))
     (fade/invert            (game.tick.to-zero))
     (trce game.tick.to-zero)
     (glfwSwapBuffers        (system.window))
@@ -109,7 +100,7 @@
     (glfwWindowShouldClose  (system.window) (game.should-exit?))
     (collect-wasd           (game.keys) (game.keys.wasd))
     (last-key               (system.last-direction game.keys.wasd) (system.last-direction))
-    (sub1-to-0              game.tick.to-zero)
+    ((step-to 0)            game.tick.to-zero)
     (pure   game)
     ((lambda (game)
        (H~> game
@@ -132,7 +123,36 @@
 (define (check-door-collision x y)
   (and (< -20 x 20) (> 130 y 100)))
 
-(require "visualizer.rkt")
+(require "visualizer.rkt" (for-syntax racket/base racket/syntax))
+
+(define-syntax-parser node
+  ([_ name state
+      ((~datum enter)
+       enter-body ...)
+      ((~datum pre)
+       pre-body ...)
+      ((~datum pure)
+       pure-body ...)
+      ((~datum post)
+       post-body ...)
+      ((~datum exit)
+       exit-body ...)]
+   #:with name-core (format-id #'name "~a-core" #'name)
+   #'(begin
+       (define (name state)
+         (trce^ 'name)
+         enter-body ...
+         (H~>
+           state
+           ((set-fsm 'name-core) game.fsm)))
+       (define (name-core state)
+         (H~>
+           state
+           pre-body ...
+           ((lambda (game)
+            (H~> game pure-body ...)) game)
+           post-body ...
+           )))))
 
 (define (menu state)
   (info^ "Entering visualization state")

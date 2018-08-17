@@ -6,6 +6,7 @@
          create-blank-texture
          load-texture*
          fade
+         fade/invert
          draw-text
          draw-texture
          draw-texture-obj
@@ -20,6 +21,9 @@
 
 (define/memoize (create-program* vertex fragment) #:finalize glDeleteProgram
   (create-program vertex fragment))
+
+(define (fade/invert value)
+  ((fade) (max 0 (/ value 120))))
 
 (define/memoize-zero fade
   (let* ([vertexarray   (u32vector-ref (glGenVertexArrays 1) 0)]

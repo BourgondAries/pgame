@@ -52,7 +52,7 @@
            (hash-set 'key (not (zero? (glfwGetKey window key*)))) ...)
      )))
 
-  ((map-glfw-keys left-control right-control escape q e w a s d up down left right) window))
+  ((map-glfw-keys left-control right-control escape q e w a s d g b up down left right) window))
 
 (define (make-global-transform trn)
   ; (dbug trn)
