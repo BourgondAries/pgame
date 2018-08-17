@@ -31,7 +31,7 @@
   (glEnable GL_MULTISAMPLE)
   (glBlendFunc GL_ONE GL_ONE_MINUS_SRC_ALPHA)
   (glDisable GL_DEPTH_TEST)
-  (glClearColor 0.3 0.8 0.3 0.5)
+  (glClearColor 0.3 0.8 0.3 0.)
   (glfwSetInputMode window GLFW_STICKY_KEYS GL_TRUE)
   ; (glPolygonMode GL_FRONT_AND_BACK GL_LINE)
   (glPolygonMode GL_FRONT GL_FILL)

@@ -73,13 +73,14 @@
   (glCopyTexSubImage2D GL_TEXTURE_2D 0 0 0 0 0 800 600)
   ; (glCopyTexImage2D GL_TEXTURE_2D 0 GL_RGB 0 0 800 600 0)
   (erro (glGetError))
+  (glClearColor 0. 0. 0. 0.)
   (for ([i 120])
     (glClear GL_COLOR_BUFFER_BIT)
     (draw-texture-obj tex)
     (
       (fade '((-1 -1 0) (-1 1 0) (1 -1 0)
               (1 -1 0)  (-1 1 0) (1 1 0)))
-        (/ i 20)
+        (/ i 120)
     )
     (H~>
       state
