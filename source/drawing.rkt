@@ -2,10 +2,12 @@
 
 (provide animate-texture
          draw-white-shape
+         load-texture*
          fade
          copy-framebuffer
          draw-text
          draw-texture
+         draw-texture-obj
          draw-texture/uv)
 
 (require racket/list
@@ -103,15 +105,62 @@
     (ftal^ "Framebuffer unable to complete")
     (exit 1))
 
+  ; (glCopyTexSubImage2D GL_TEXTURE_2D 0 0 0 0 0 800 600)
+
   (glBindFramebuffer GL_DRAW_FRAMEBUFFER 0)
   (glBindFramebuffer GL_READ_FRAMEBUFFER 0)
   (glBindFramebuffer GL_DRAW_FRAMEBUFFER fbo)
-  (glBlitFramebuffer 0 0 1 1 0 0 1 1 GL_COLOR_BUFFER_BIT GL_NEAREST)
+  (glBlitFramebuffer 0 0 800 600 0 0 800 600 GL_COLOR_BUFFER_BIT GL_NEAREST)
   (glBindFramebuffer GL_READ_FRAMEBUFFER 0)
   (glBindFramebuffer GL_DRAW_FRAMEBUFFER 0)
 
   (trce (glGetError))
+  color-texture
   )
+
+(define (draw-texture-obj tx)
+  (define program-id (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
+                                 (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
+  (glUseProgram program-id)
+  (define points* (list->f32vector (map real->single-flonum '(
+                                            -1 -1    0  0
+                                            -1  1    0  1
+                                             1 -1    1  0
+                                            -1  1    0  1
+                                             1  1    1  1
+                                             1 -1    1  0
+                                            ))))
+  (define tex-loc (glGetUniformLocation program-id "texture"))
+  (define move-loc (glGetUniformLocation program-id "movement"))
+  (define vertexbuffer  (u32vector-ref (glGenBuffers 1) 0))
+  ; (glBindVertexArray vertexarray)
+  (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
+  (glBufferData GL_ARRAY_BUFFER
+                (* (f32vector-length points*) 4)
+                (f32vector->cpointer points*)
+                GL_STATIC_DRAW)
+  (glEnableVertexAttribArray 0)
+  (glEnableVertexAttribArray 1)
+  (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
+  (glVertexAttribPointer 0 2 GL_FLOAT #f 16 #f)
+  (glVertexAttribPointer 1 2 GL_FLOAT #f 16 8)
+
+  (glActiveTexture GL_TEXTURE0)
+  (glUniform1i tex-loc #|GL_TEXTURE|# 0)
+  (glBindTexture GL_TEXTURE_2D tx)
+
+  (glUniformMatrix4fv move-loc 1 #f
+                      (list->f32vector
+                        (map real->single-flonum
+                          (matrix->list
+                            (matrix* (matrix [[1.0 0 0 0]
+                                              [0 1.0 0 0]
+                                              [0 0 1.0 0]
+                                              [0 0 0 1]]))))))
+  (glDrawArrays GL_TRIANGLES 0 6)
+
+  (glDisableVertexAttribArray 1)
+  (glDisableVertexAttribArray 0))
 
 (define/memoize (load-texture* file) #:finalize (lambda (x) (glDeleteTextures 1 (u32vector x)) (erro 'del) (exit))
   (load-texture file #:mipmap #t))
