@@ -181,9 +181,18 @@
                rx ty rx* ty*
                rx by rx* by*))
 
-(define/memoize-partial draw-tiles (file horizontal-panes vertical-panes) (tiles transform)
-  ((define runs (animate-texture file '(-1 -1) '(1 1) horizontal-panes vertical-panes)))
-  (
+(define/memoize-partial draw-tiles (file horizontal-panes vertical-panes tiles transform) (x)
+  ((define runs (animate-texture file '(-1 -1) '(1 1) horizontal-panes vertical-panes))
+   (define fbo (u32vector-ref (glGenFramebuffers 1) 0))
+   (glBindFramebuffer GL_FRAMEBUFFER fbo)
+
+   (define tex (create-blank-texture 800 600))
+   (glFramebufferTexture GL_FRAMEBUFFER GL_COLOR_ATTACHMENT0 tex 0)
+   (when (not (= GL_FRAMEBUFFER_COMPLETE (glCheckFramebufferStatus GL_FRAMEBUFFER)))
+     (ftal^ "Unable to create framebuffer")
+     (exit 3))
+   (glBindFramebuffer GL_FRAMEBUFFER fbo)
+   (glViewport 0 0 800 600)
    (for/fold ([y* 0])
              ([tile-line tiles])
      (for/fold ([x* 0])
@@ -191,7 +200,12 @@
        (let-values ([(x y) (ticker tile horizontal-panes vertical-panes)])
          (runs x y #:transform (matrix-transpose (matrix* transform (matrix-transpose (translate x* y*)))))
          (+ 2 x*)))
-     (+ 2 y*))))
+     (+ 2 y*))
+    (glBindFramebuffer GL_FRAMEBUFFER 0)
+    (glViewport 0 0 800 600))
+  (
+   (draw-texture-obj tex)
+   ))
 
 (define (scale c)
   (let ([c (real->single-flonum c)])

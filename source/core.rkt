@@ -130,7 +130,7 @@
   (trce (quotient tick 60))
   ((animate-texture "data/basictiles.png" '(-1 -1) '(-0.5 -0.5) 8 15)
    x y)
-  (draw-tiles "data/basictiles.png" 8 15 grass (scale 5/100))
+  (draw-tiles "data/basictiles.png" 8 15 grass (scale 5/100) 0)
   )
 
 ;; This is a scene. Very simple, H~>-oriented
