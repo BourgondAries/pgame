@@ -30,7 +30,7 @@
    "Nani the fuck\nis going on?"))
 
 (define (render-absolute)
-  ((draw-texture "data/simple-house.png" '(-0.3 0.3) '(0.3 1.4)) 0))
+  (draw-texture "data/simple-house.png" '(-0.3 0.3) '(0.3 1.4)))
 
 (define (get-keys window)
   (define-syntax-parser map-glfw-keys
@@ -77,13 +77,14 @@
 (define (draw global-trn iter last-direction mado)
   ; ((animate-texture "data/simple-house.png" '(-1 -1) '(0 0) 3 3)
    ; (sub1 iter) iter)
-  (match last-direction
-    ('s ((list-ref mado (floor (/ (modulo iter 40) 10))) #:transform global-trn))
-    ('a ((list-ref mado (+ 4 (floor (/ (modulo iter 40) 10)))) #:transform global-trn))
-    ('w ((list-ref mado (+ 8 (floor (/ (modulo iter 40) 10)))) #:transform global-trn))
-    ('d ((list-ref mado (+ 12 (floor (/ (modulo iter 40) 10)))) #:transform global-trn))
-    (_  ((list-ref mado (floor (/ (modulo iter 40) 10)))))
-  ))
+  (parameterize ([*view* (matrix* (if global-trn global-trn (identity-matrix 4)) (*view*))])
+    (match last-direction
+      ('s ((list-ref mado (floor (/ (modulo iter 40) 10))) ))
+      ('a ((list-ref mado (+ 4 (floor (/ (modulo iter 40) 10)))) ))
+      ('w ((list-ref mado (+ 8 (floor (/ (modulo iter 40) 10)))) ))
+      ('d ((list-ref mado (+ 12 (floor (/ (modulo iter 40) 10)))) ))
+      (_  ((list-ref mado (floor (/ (modulo iter 40) 10)))))
+  )))
 
 (define (draw-relative global-trn mado)
   (when mado

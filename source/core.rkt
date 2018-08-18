@@ -101,24 +101,38 @@
            post-body ...
            )))))
 
+(define (dd)
+  (draw-texture "data/text/main-text2.png" '(-1 -1) '(1 1)))
+
 (node experiment state
   (enter
     (do-fade       (system.window))
     )
   (pre
     (clear-graphics   ())
+    (dd ())
+    (aa (game.tick.iteration))
     (render-absolute  ())
     (draw             (system.transform game.tick.direction-keys game.last-direction system.animation.madotsuki))
     (draw-relative    (system.transform system.render.relative))
-    (aa (game.tick.iteration))
     (fade/invert            (game.tick.to-zero))
     (glfwSwapBuffers        (system.window))
+    (get-keys               (system.window) (game.keys))
     )
   (pure
+    (collect-wasd           (keys) (keys.wasd))
+    (last-key               (last-direction keys.wasd) (last-direction))
     ((step-to 0)  tick.to-zero)
+    (pure *)
     (add1 tick.iteration)
+    (any-direction-keys?       (keys)                 (any-direction-keys?))
+    ((if* add1)       (any-direction-keys?
+                       tick.direction-keys)
+                      (tick.direction-keys))
     )
-  (post)
+  (post
+    (make-global-transform     (game.transform)            (system.transform))
+    )
   (exit)
   )
 
@@ -144,9 +158,6 @@
     )
   (pre
     (clear-graphics   ())
-    ((if* add1)       (game.any-direction-keys?
-                       game.tick.direction-keys)
-                      (game.tick.direction-keys))
     (render-absolute  ())
     (draw             (system.transform game.tick.direction-keys game.last-direction system.animation.madotsuki))
     (draw-relative    (system.transform system.render.relative))
@@ -166,6 +177,9 @@
     ((if* (set-fsm 'top-map))  (collides? fsm)            (fsm))
     ((set-fsm 'experiment)      fsm)
     (any-direction-keys?       (keys)                 (any-direction-keys?))
+    ((if* add1)       (any-direction-keys?
+                       tick.direction-keys)
+                      (tick.direction-keys))
     )
   (post
     (make-global-transform     (game.transform)            (system.transform))
