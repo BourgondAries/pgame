@@ -23,7 +23,6 @@
            [0 0 1 0]
            [x y 0 1]]))
 
-
 (define/memoize (load-shader* file shader-type) #:finalize glDeleteShader
   (load-shader file shader-type))
 
@@ -44,23 +43,26 @@
 
 ;; Turning the view into a f32vector is remarkably slow
 ;; this speeds it up by 2 orders of magnitude
-(define/memoize (get-view view)
+(define/memoize (view->f32vector view)
   (list->f32vector
     (map real->single-flonum
       (matrix->list view))))
 
+(define (get-view)
+  (view->f32vector (*view*)))
+
 (define/memoize-partial fade () (alpha)
   ((define vertexarray   (u32vector-ref   (glGenVertexArrays 1) 0))
+   (register-finalizer          vertexarray  (lambda (x) (glDeleteVertexArrays 1 (u32vector x))))
    (define vertexbuffer  (u32vector-ref   (glGenBuffers      1) 0))
    (define program-id    (create-program* (load-shader* "source/shaders/fade.vertex.glsl"   GL_VERTEX_SHADER)
                                           (load-shader* "source/shaders/fade.fragment.glsl" GL_FRAGMENT_SHADER)))
    (define opacity       (glGetUniformLocation program-id "opacity"))
-   (define points        '((-1 -1) (-1 1) (1 -1) (1 -1)  (-1 1) (1 1)))
-   (define point-length  (length points))
-   (define points*       (list->f32vector (map real->single-flonum (flatten points))))
+   (define points               '((-1 -1) (-1 1) (1 -1) (1 -1)  (-1 1) (1 1)))
+   (define point-length         (length points))
+   (define points*              (list->f32vector (map real->single-flonum (flatten points))))
    (define vertex-location      (glGetAttribLocation program-id "vertex"))
    (define dim-vertex           2)
-   (register-finalizer          vertexarray  (lambda (x) (glDeleteVertexArrays 1 (u32vector x))))
    (glBindVertexArray           vertexarray)
    (glBindBuffer                GL_ARRAY_BUFFER  vertexbuffer)
    (glVertexAttribPointer       vertex-location dim-vertex GL_FLOAT #f 0 #f)
@@ -88,6 +90,7 @@
 ;; Draws a white shape, takes in a set of triangles and vec4 color
 (define/memoize-partial draw-shape (points color) ()
   ((define vertexarray    (u32vector-ref (glGenVertexArrays 1) 0))
+   (register-finalizer          vertexarray  (lambda (x) (glDeleteVertexArrays 1 (u32vector x))))
    ;; TODO perhaps use glGenBuffers 2 for both vertex and color data
    (define vertexbuffer   (u32vector-ref (glGenBuffers      1) 0))
    (define colorbuffer    (u32vector-ref (glGenBuffers      1) 0))
@@ -102,7 +105,6 @@
    (define color-location       (glGetAttribLocation program-id "color"))
    (define dim-vertex           2)  ; Dimension of vertices
    (define dim-color            4)  ; Dimension of color
-   (register-finalizer          vertexarray  (lambda (x) (glDeleteVertexArrays 1 (u32vector x))))
    (glBindVertexArray           vertexarray)
    (glBindBuffer                GL_ARRAY_BUFFER vertexbuffer)
    (glBufferData                GL_ARRAY_BUFFER
@@ -125,7 +127,7 @@
   ((glUseProgram (create-program* (load-shader* "source/shaders/shape.vertex.glsl"   GL_VERTEX_SHADER)
                                   (load-shader* "source/shaders/shape.fragment.glsl" GL_FRAGMENT_SHADER)))
    (glBindVertexArray    vertexarray)
-   (glUniformMatrix4fv   move-loc 1 #f (get-view (*view*)))
+   (glUniformMatrix4fv   move-loc 1 #f (get-view))
    (glDrawArrays         GL_TRIANGLES 0 point-length)
    (glBindVertexArray    0)
    ))
@@ -150,6 +152,7 @@
   (glTexImage2D      GL_TEXTURE_2D 0 GL_RGBA width height 0 GL_RGBA GL_UNSIGNED_BYTE 0)
   texture)
 
+;; Useful routine for drawing the previous frame, which just takes over the screen
 (define/memoize-partial draw-texture-fullscreen () (texture)
   ((define program-id (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
                                        (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
@@ -159,13 +162,13 @@
                                                                         (-1  1) (0 1)
                                                                         ( 1  1) (1 1)
                                                                         ( 1 -1) (1 0))))))
-   (define tex-loc       (glGetUniformLocation program-id "texture"))
-   (define move-loc      (glGetUniformLocation program-id "movement"))
-   (define vertex        (glGetAttribLocation program-id "vertex"))
-   (define vertex-uv     (glGetAttribLocation program-id "vertex_uv"))
-   (define vertexarray   (u32vector-ref (glGenVertexArrays 1) 0))
-   (define vertexbuffer  (u32vector-ref (glGenBuffers 1) 0))
-   (define dim           2)
+   (define tex-loc        (glGetUniformLocation program-id "texture"))
+   (define move-loc       (glGetUniformLocation program-id "movement"))
+   (define vertex         (glGetAttribLocation program-id "vertex"))
+   (define vertex-uv      (glGetAttribLocation program-id "vertex_uv"))
+   (define vertexarray    (u32vector-ref (glGenVertexArrays 1) 0))
+   (define vertexbuffer   (u32vector-ref (glGenBuffers 1) 0))
+   (define dim            2)
    (glBindVertexArray           vertexarray)
    (glBindBuffer                GL_ARRAY_BUFFER vertexbuffer)
    (glBufferData                GL_ARRAY_BUFFER
@@ -174,7 +177,7 @@
                                 GL_STATIC_DRAW)
    (glEnableVertexAttribArray   vertex)
    (glEnableVertexAttribArray   vertex-uv)
-   (glVertexAttribPointer       vertex     dim GL_FLOAT #f 16 #f)
+   (glVertexAttribPointer       vertex     dim GL_FLOAT #f 16 #f) ; TODO use calculations to get to 16 and 8
    (glVertexAttribPointer       vertex-uv  dim GL_FLOAT #f 16  8)
    (glBindVertexArray           0)
    (glDeleteBuffers             1 (u32vector vertexbuffer))
@@ -185,7 +188,7 @@
    (glActiveTexture      GL_TEXTURE0)
    (glUniform1i          tex-loc #|GL_TEXTURE|# 0)
    (glBindTexture        GL_TEXTURE_2D texture)
-   (glUniformMatrix4fv   move-loc 1 #f (get-view (*view*)))
+   (glUniformMatrix4fv   move-loc 1 #f (get-view))
    (glDrawArrays         GL_TRIANGLES 0 6)
    (glBindVertexArray    0)
   ))
@@ -258,10 +261,11 @@
     (flatten
       (for/list ([i horizontal-panes])
         (for/list ([j vertical-panes])
-          (draw-texture/uv source bottom-left top-right (list (/ i horizontal-panes)
-                                                              (/ j vertical-panes))
-                                                        (list (/ (add1 i) horizontal-panes)
-                                                              (/ (add1 j) vertical-panes))))))])
+          (lambda ()
+            (draw-texture/uv source bottom-left top-right (list (/ i horizontal-panes)
+                                                                (/ j vertical-panes))
+                                                          (list (/ (add1 i) horizontal-panes)
+                                                                (/ (add1 j) vertical-panes)))))))])
     (lambda (i j)
         ((list-ref runs (+ (modulo j vertical-panes) (* vertical-panes (modulo i horizontal-panes))))))
       ))
@@ -304,13 +308,13 @@
    )
    ((glUseProgram (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
                                    (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
-    (glBindVertexArray vertexarray)
-    (glActiveTexture GL_TEXTURE0)
-    (glUniform1i tex-loc #|GL_TEXTURE|# 0)
-    (glBindTexture GL_TEXTURE_2D tex)
-    (glUniformMatrix4fv move-loc 1 #f (get-view (*view*)))
-    (glDrawArrays GL_TRIANGLES 0 6)
-    (glBindVertexArray 0)
+    (glBindVertexArray    vertexarray)
+    (glActiveTexture      GL_TEXTURE0)
+    (glUniform1i          tex-loc #|GL_TEXTURE|# 0)
+    (glBindTexture        GL_TEXTURE_2D tex)
+    (glUniformMatrix4fv   move-loc 1 #f (get-view))
+    (glDrawArrays         GL_TRIANGLES 0 6)
+    (glBindVertexArray    0)
     ))
 
 (define/memoize (draw-text text-sheet
@@ -334,64 +338,53 @@
              ))))))
 
 
-(define/memoize (draw-texture/uv file bottom-left    top-right
-                                      bottom-left-uv top-right-uv)
-  (let* ([tex           (load-texture* file)]
-         [vertexarray   (u32vector-ref (glGenVertexArrays 1) 0)]
-         [vertexbuffer  (u32vector-ref (glGenBuffers      1) 0)]
-         [program-id    (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
-                                         (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER))]
-         [move-loc      (glGetUniformLocation program-id "movement")]
-         [tex-loc       (glGetUniformLocation program-id "texture")]
-         [points*       (rectangle->f32vector/uv bottom-left    top-right
-                                                 bottom-left-uv top-right-uv)])
-    (register-finalizer tex (lambda (x) (glDeleteBuffers 1 (u32vector x))))
-    (register-finalizer vertexarray
-                        (lambda (x)
-                          (trce `(gldelet vertex))
-                          (exit 99)
-                          (glDeleteVertexArrays 1 (u32vector x))))
-    (register-finalizer vertexbuffer
-                        (lambda (x)
-                          (trce `(gldelet))
-                          (glDeleteBuffers 1 (u32vector x))))
-
-    (glBindVertexArray vertexarray)
-    (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
-    (glBufferData GL_ARRAY_BUFFER
-                  (* (f32vector-length points*) 4)
-                  (f32vector->cpointer points*)
-                  GL_STATIC_DRAW)
-
-    (glBindTexture GL_TEXTURE_2D tex)
-    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_BORDER)
-    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_BORDER)
-
-    ;; Border color if clamp-to-border
-    ; (glTexParameterfv GL_TEXTURE_2D GL_TEXTURE_BORDER_COLOR {1 0 0 1})
-
-    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
-    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
-
-    (glGenerateMipmap GL_TEXTURE_2D)
-    (lambda ()
-      (glUseProgram (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
-                                     (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
-
-      (glEnableVertexAttribArray 0)
-      (glEnableVertexAttribArray 1)
-      (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
-      (glVertexAttribPointer 0 2 GL_FLOAT #f 16 #f)
-      (glVertexAttribPointer 1 2 GL_FLOAT #f 16 8)
-
-      (glActiveTexture GL_TEXTURE0)
-      (glUniform1i tex-loc #|GL_TEXTURE|# 0)
-      (glBindTexture GL_TEXTURE_2D tex)
-
-      (glUniformMatrix4fv move-loc 1 #f (get-view (*view*)))
-      (glDrawArrays GL_TRIANGLES 0 6)
-
-      (glDisableVertexAttribArray 1)
-      (glDisableVertexAttribArray 0)
-      )))
-
+(define/memoize-partial draw-texture/uv (file bottom-left    top-right
+                                              bottom-left-uv top-right-uv) ()
+  ((define tex            (load-texture* file))
+   (define vertexarray    (u32vector-ref (glGenVertexArrays 1) 0))
+   (define vertexbuffer   (u32vector-ref (glGenBuffers      1) 0))
+   (define program-id     (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
+                                           (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
+   (define move-loc       (glGetUniformLocation program-id "movement"))
+   (define tex-loc        (glGetUniformLocation program-id "texture"))
+   (define vertex-loc     (glGetAttribLocation program-id "vertex"))
+   (define uv-loc         (glGetAttribLocation program-id "vertex_uv"))
+   (define dim-vertex     2)
+   (define dim-uv         2)
+   (define stride         (* dim-vertex dim-uv size-gl-float))
+   (define points*        (rectangle->f32vector/uv bottom-left    top-right
+                                                   bottom-left-uv top-right-uv))
+   (register-finalizer          tex (lambda (x) (glDeleteTextures 1 (u32vector x))))
+   (register-finalizer          vertexarray (lambda (x) (glDeleteVertexArrays 1 (u32vector x))))
+   (glBindVertexArray           vertexarray)
+   (glBindBuffer                GL_ARRAY_BUFFER vertexbuffer)
+   (glBufferData                GL_ARRAY_BUFFER
+                                (* (f32vector-length points*) size-gl-float)
+                                (f32vector->cpointer points*)
+                                GL_STATIC_DRAW)
+   (glEnableVertexAttribArray   vertex-loc)
+   (glEnableVertexAttribArray   uv-loc)
+   (glVertexAttribPointer       vertex-loc dim-vertex GL_FLOAT #f stride #f)
+   (glVertexAttribPointer       uv-loc dim-uv GL_FLOAT #f stride (* dim-vertex size-gl-float))
+   (glBindVertexArray           0)
+   (glDeleteBuffers             1 (u32vector vertexbuffer))
+   ;;
+   (glBindTexture      GL_TEXTURE_2D tex)
+   (glTexParameteri    GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_BORDER)
+   (glTexParameteri    GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_BORDER)
+   ;; Border color if clamp-to-border
+   ; (glTexParameterfv GL_TEXTURE_2D GL_TEXTURE_BORDER_COLOR {1 0 0 1})
+   (glTexParameteri    GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
+   (glTexParameteri    GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
+   (glGenerateMipmap   GL_TEXTURE_2D)
+   )
+  ((glUseProgram (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
+                                  (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
+   (glBindVertexArray    vertexarray)
+   (glActiveTexture      GL_TEXTURE0)
+   (glUniform1i          tex-loc #|GL_TEXTURE|# 0)
+   (glBindTexture        GL_TEXTURE_2D tex)
+   (glUniformMatrix4fv   move-loc 1 #f (get-view))
+   (glDrawArrays         GL_TRIANGLES 0 6)
+   (glBindVertexArray    0)
+   ))

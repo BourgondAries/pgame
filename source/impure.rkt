@@ -89,7 +89,7 @@
 (define (draw-relative global-trn mado)
   (when mado
     (for ([x mado])
-      ((draw-texture/uv* x) #:transform global-trn)
+      (draw-texture/uv* x)
     )))
 
 (define/memoize (draw-texture/uv* lst)
