@@ -7,6 +7,8 @@
          "pure.rkt"
          logger memo)
 
+(define size-gl-float 4)
+
 (define/memoize (load-shader* file shader-type) #:finalize glDeleteShader
   (load-shader file shader-type))
 
@@ -17,33 +19,31 @@
   ((fade) (max 0 (/ value 120))))
 
 (define/memoize-zero fade
-  (let* ([vertexarray   (u32vector-ref (glGenVertexArrays 1) 0)]
-         [vertexbuffer  (u32vector-ref (glGenBuffers      1) 0)]
-         ;;
+  (let* ([vertexarray   (u32vector-ref   (glGenVertexArrays 1) 0)]
+         [vertexbuffer  (u32vector-ref   (glGenBuffers      1) 0)]
          [program-id    (create-program* (load-shader* "source/shaders/fade.vertex.glsl"   GL_VERTEX_SHADER)
                                          (load-shader* "source/shaders/fade.fragment.glsl" GL_FRAGMENT_SHADER))]
-         ;;
          [opacity       (glGetUniformLocation program-id "opacity")]
-         [points        '((-1 -1 0) (-1 1 0) (1 -1 0) (1 -1 0)  (-1 1 0) (1 1 0))]
+         [points        '((-1 -1) (-1 1) (1 -1) (1 -1)  (-1 1) (1 1))]
          [point-length  (length points)]
          [points*       (list->f32vector (map real->single-flonum (flatten points)))])
     (register-finalizer vertexarray  (lambda (x) (glDeleteVertexArrays 1 (u32vector x))))
     (register-finalizer vertexbuffer (lambda (x) (glDeleteBuffers      1 (u32vector x))))
-    (glBindVertexArray vertexarray)
+    ; (glBindVertexArray vertexarray)
     (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
     (glBufferData GL_ARRAY_BUFFER
-                  (* (length points) 3 4)
+                  (* (length points) 2 size-gl-float)
                   (f32vector->cpointer points*)
                   GL_STATIC_DRAW)
     (lambda (alpha)
       (glUseProgram (create-program* (load-shader* "source/shaders/fade.vertex.glsl"   GL_VERTEX_SHADER)
                                      (load-shader* "source/shaders/fade.fragment.glsl" GL_FRAGMENT_SHADER)))
-      (glEnableVertexAttribArray 0)
-      (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
-      (glVertexAttribPointer 0 3 GL_FLOAT #f 0 #f)
-      (glUniform1f opacity (real->double-flonum alpha))
-      (glDrawArrays GL_TRIANGLES  0 point-length)
-      (glDisableVertexAttribArray 0))))
+      (glEnableVertexAttribArray   0)
+      (glBindBuffer                GL_ARRAY_BUFFER vertexbuffer)
+      (glVertexAttribPointer       0 2 GL_FLOAT #f 0 #f)
+      (glUniform1f                 opacity (real->double-flonum alpha))
+      (glDrawArrays                GL_TRIANGLES 0 point-length)
+      (glDisableVertexAttribArray  0))))
 
 ;; Draws a white shape, takes in a set of triangles.
 (define/memoize (draw-white-shape points)
