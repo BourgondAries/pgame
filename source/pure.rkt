@@ -34,6 +34,10 @@
 (define ((set-fsm symbol) fsm)
   (cons symbol (rest fsm)))
 
+(define (ticker v x y)
+  (values (modulo v x)
+          (quotient v x)))
+
 ;; Handles all pure state changes
 (define (pure state)
   (H~>

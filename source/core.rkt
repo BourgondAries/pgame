@@ -122,15 +122,16 @@
   (exit)
   )
 
-(define (ticker v x y)
-  (values (modulo v x)
-          (quotient v x)))
+(define grass (make-list 20 (make-list 20 49)))
 
 (define (aa tick)
-  (trce tick)
+  ; (trce tick)
   (define-values (x y) (ticker (quotient tick 60) 8 15))
+  (trce (quotient tick 60))
   ((animate-texture "data/basictiles.png" '(-1 -1) '(-0.5 -0.5) 8 15)
-   x y))
+   x y)
+  (draw-tiles "data/basictiles.png" 8 15 grass (scale 5/100))
+  )
 
 ;; This is a scene. Very simple, H~>-oriented
 (node top-map state

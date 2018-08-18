@@ -1,19 +1,10 @@
 #lang racket/base
 
-(provide animate-texture
-         draw-white-shape
-         draw-previous-frame
-         create-blank-texture
-         load-texture*
-         fade
-         fade/invert
-         draw-text
-         draw-texture
-         draw-texture-obj
-         draw-texture/uv)
+(provide (all-defined-out))
 
 (require racket/list
          ffi/vector finalizer math/matrix opengl opengl/util
+         "pure.rkt"
          logger memo)
 
 (define/memoize (load-shader* file shader-type) #:finalize glDeleteShader
@@ -189,6 +180,25 @@
                lx by lx* by*
                rx ty rx* ty*
                rx by rx* by*))
+
+(define/memoize-partial draw-tiles (file horizontal-panes vertical-panes) (tiles transform)
+  ((define runs (animate-texture file '(-1 -1) '(1 1) horizontal-panes vertical-panes)))
+  (
+   (for/fold ([y* 0])
+             ([tile-line tiles])
+     (for/fold ([x* 0])
+               ([tile tile-line])
+       (let-values ([(x y) (ticker tile horizontal-panes vertical-panes)])
+         (runs x y #:transform (matrix-transpose (matrix* transform (matrix-transpose (translate x* y*)))))
+         (+ 2 x*)))
+     (+ 2 y*))))
+
+(define (scale c)
+  (let ([c (real->single-flonum c)])
+    (matrix* (matrix [[c 0 0 0]
+                      [0 c 0 0]
+                      [0 0 c 0]
+                      [0 0 0 1f0]]))))
 
 (define/memoize (animate-texture source bottom-left top-right horizontal-panes vertical-panes)
   (let ([runs
