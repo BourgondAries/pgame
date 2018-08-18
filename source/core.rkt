@@ -70,55 +70,6 @@
     (glfwSwapBuffers window))
   (glClearColor 0.3 0.8 0.3 0.))
 
-(node top-map state
-  (enter
-    (do-fade (system.window))
-    ((const -100) game.transform.y)
-    ((const 120)  game.tick.to-zero)
-    )
-  (pre)
-  (pure
-    (clear-graphics   ())
-    ((if* add1)       (game.any-direction-keys?
-                       game.tick.direction-keys)
-                      (game.tick.direction-keys))
-    (render-absolute  ())
-    (draw             (system.transform game.tick.direction-keys system.last-direction system.animation.madotsuki))
-    (draw-relative    (system.transform system.render.relative))
-    (fade/invert            (game.tick.to-zero))
-    (trce game.tick.to-zero)
-    (glfwSwapBuffers        (system.window))
-    (get-keys               (system.window) (game.keys))
-    (glfwWindowShouldClose  (system.window) (game.should-exit?))
-    (collect-wasd           (game.keys) (game.keys.wasd))
-    (last-key               (system.last-direction game.keys.wasd) (system.last-direction))
-    ((step-to 0)            game.tick.to-zero)
-    (pure   game)
-    ((lambda (game)
-       (H~> game
-          (add1 tick.iteration)
-          ))
-     game)
-    (check-door-collision       (game.transform.x game.transform.y)  (game.collides?))
-    ((if* (push-fsm 'top-map))  (game.collides? game.fsm)            (game.fsm))
-    (any-direction-keys?        (game.keys)                 (game.any-direction-keys?))
-    (make-global-transform      (game.transform)            (system.transform))
-    )
-  (post)
-  (exit)
-  )
-
-
-(define (collect-wasd keys)
-  (or
-    (if (hash-ref keys 'a #f) 'a #f)
-    (if (hash-ref keys 'd #f) 'd #f)
-    (if (hash-ref keys 'w #f) 'w #f)
-    (if (hash-ref keys 's #f) 's #f)))
-
-(define (check-door-collision x y)
-  (and (< -20 x 20) (> 130 y 100)))
-
 (require "visualizer.rkt" (for-syntax racket/base racket/syntax))
 
 (define-syntax-parser node
@@ -136,7 +87,7 @@
    #:with name-core (format-id #'name "~a-core" #'name)
    #'(begin
        (define (name state)
-         (trce^ 'name)
+         (trce^ name)
          (H~>
            state
            enter-body ...
@@ -149,6 +100,87 @@
             (H~> game pure-body ...)) game)
            post-body ...
            )))))
+
+(node experiment state
+  (enter
+    (do-fade       (system.window))
+    )
+  (pre
+    (clear-graphics   ())
+    (render-absolute  ())
+    (draw             (system.transform game.tick.direction-keys game.last-direction system.animation.madotsuki))
+    (draw-relative    (system.transform system.render.relative))
+    (fade/invert            (game.tick.to-zero))
+    (aa (game.tick.iteration))
+    (glfwSwapBuffers        (system.window))
+    )
+  (pure
+    ((step-to 0)  tick.to-zero)
+    (add1 tick.iteration)
+    )
+  (post)
+  (exit)
+  )
+
+(define (ticker v x y)
+  (values (modulo v x)
+          (quotient v x)))
+
+(define (aa tick)
+  (trce tick)
+  (define-values (x y) (ticker (quotient tick 60) 8 15))
+  ((animate-texture "data/basictiles.png" '(-1 -1) '(-0.5 -0.5) 8 15)
+   x y))
+
+;; This is a scene. Very simple, H~>-oriented
+(node top-map state
+  (enter
+    ((const -100)  game.transform.y)
+    ((const  120)  game.tick.to-zero)
+    (do-fade       (system.window))
+    )
+  (pre
+    (clear-graphics   ())
+    ((if* add1)       (game.any-direction-keys?
+                       game.tick.direction-keys)
+                      (game.tick.direction-keys))
+    (render-absolute  ())
+    (draw             (system.transform game.tick.direction-keys game.last-direction system.animation.madotsuki))
+    (draw-relative    (system.transform system.render.relative))
+    (fade/invert            (game.tick.to-zero))
+    ; (trce game.tick.to-zero)
+    (glfwSwapBuffers        (system.window))
+    (get-keys               (system.window) (game.keys))
+    (glfwWindowShouldClose  (system.window) (game.should-exit?))
+    )
+  (pure
+    (collect-wasd           (keys) (keys.wasd))
+    (last-key               (last-direction keys.wasd) (last-direction))
+    ((step-to 0)            tick.to-zero)
+    (pure   *)
+    (add1                      tick.iteration)
+    (check-door-collision      (transform.x transform.y)  (collides?))
+    ((if* (set-fsm 'top-map))  (collides? fsm)            (fsm))
+    ((set-fsm 'experiment)      fsm)
+    (any-direction-keys?       (keys)                 (any-direction-keys?))
+    )
+  (post
+    (make-global-transform     (game.transform)            (system.transform))
+    )
+  (exit)
+  )
+
+
+(define (collect-wasd keys)
+  (or
+    (if (hash-ref keys 'a #f) 'a #f)
+    (if (hash-ref keys 'd #f) 'd #f)
+    (if (hash-ref keys 'w #f) 'w #f)
+    (if (hash-ref keys 's #f) 's #f)))
+
+(define (check-door-collision x y)
+  (and (< -20 x 20) (> 130 y 100)))
+
 
 (define (menu state)
   (info^ "Entering visualization state")

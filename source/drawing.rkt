@@ -108,7 +108,7 @@
   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
   ; (glTexEnvf GL_TEXTURE_ENV GL_TEXTURE_ENV_MODE GL_MODULATE)
-  (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA 800 600 0 GL_RGBA GL_UNSIGNED_BYTE 0)
+  (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA w h 0 GL_RGBA GL_UNSIGNED_BYTE 0)
   tex)
 
 (define (draw-texture-obj tx)
@@ -203,15 +203,15 @@
       ((list-ref runs (+ (modulo j vertical-panes) (* vertical-panes (modulo i horizontal-panes)))) #:transform transform)
       )))
 
-(define/memoize (draw-texture file bottom-left top-right)
-  (let* ([tex (load-texture* file)]
-         [vertexarray   (u32vector-ref (glGenVertexArrays 1) 0)]
-         [vertexbuffer  (u32vector-ref (glGenBuffers 1) 0)]
-         [program-id    (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
-                                         (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER))]
-         [move-loc      (glGetUniformLocation program-id "movement")]
-         [tex-loc       (glGetUniformLocation program-id "texture")]
-         [points*       (rectangle->f32vector bottom-left top-right)])
+(define/memoize-partial draw-texture (file bottom-left top-right) (x)
+  ((define tex (load-texture* file))
+   (define vertexarray   (u32vector-ref (glGenVertexArrays 1) 0))
+   (define vertexbuffer  (u32vector-ref (glGenBuffers 1) 0))
+   (define program-id    (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
+                                   (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
+   (define move-loc      (glGetUniformLocation program-id "movement"))
+   (define tex-loc       (glGetUniformLocation program-id "texture"))
+   (define points*       (rectangle->f32vector bottom-left top-right))
     (register-finalizer tex (lambda (x) (glDeleteBuffers 1 (u32vector x))))
     (register-finalizer vertexarray
                         (lambda (x)
@@ -240,9 +240,9 @@
     (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
     (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
 
-    (glGenerateMipmap GL_TEXTURE_2D)
-    (lambda (x)
-      (glUseProgram (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
+    (glGenerateMipmap GL_TEXTURE_2D))
+   (
+    (glUseProgram (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
                                      (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
 
       (glEnableVertexAttribArray 0)
@@ -267,7 +267,7 @@
 
       (glDisableVertexAttribArray 1)
       (glDisableVertexAttribArray 0)
-      )))
+      ))
 
 (define (translate x y)
   (matrix [[1 0 0 0]
