@@ -5,5 +5,5 @@ uniform mat4 movement;
 out vec4 color_fragment;
 void main() {
   gl_Position = movement * vec4(vertex, 0, 1);
-  color_fragment = vec4(1, 1, 1, 0.5); //color;
+  color_fragment = color;
 }

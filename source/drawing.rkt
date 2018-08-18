@@ -16,158 +16,166 @@
   (create-program vertex fragment))
 
 (define (fade/invert value)
-  ((fade) (max 0 (/ value 120))))
+  (fade (max 0 (/ value 120))))
 
-(define/memoize-zero fade
-  (let* ([vertexarray   (u32vector-ref   (glGenVertexArrays 1) 0)]
-         [vertexbuffer  (u32vector-ref   (glGenBuffers      1) 0)]
-         [program-id    (create-program* (load-shader* "source/shaders/fade.vertex.glsl"   GL_VERTEX_SHADER)
-                                         (load-shader* "source/shaders/fade.fragment.glsl" GL_FRAGMENT_SHADER))]
-         [opacity       (glGetUniformLocation program-id "opacity")]
-         [points        '((-1 -1) (-1 1) (1 -1) (1 -1)  (-1 1) (1 1))]
-         [point-length  (length points)]
-         [points*       (list->f32vector (map real->single-flonum (flatten points)))])
-    (register-finalizer vertexarray  (lambda (x) (glDeleteVertexArrays 1 (u32vector x))))
-    (define vertex-location (glGetAttribLocation program-id "vertex"))
-    (define dim 2)  ; Dimension of vertices
-    (glBindVertexArray             vertexarray)
-    (glBindBuffer GL_ARRAY_BUFFER  vertexbuffer)
-    (glVertexAttribPointer         vertex-location dim GL_FLOAT #f 0 #f)
-    (glBufferData                  GL_ARRAY_BUFFER
-                                   (* (length points) dim size-gl-float)
-                                   (f32vector->cpointer points*)
-                                   GL_STATIC_DRAW)
-    (glEnableVertexAttribArray     vertex-location)
-    (glBindVertexArray             0)  ; Unbind the VAO, so other draw calls do not affect this one
-    ;; The buffer is referenced by the container object (VAO), so it is not deleted from memory, and this is safe (MUST be after unbinding the VAO)
-    ;; See OpenGL 4.5 spec.: 5.1.2 (Automatic Unbinding of Deleted Objects) and 5.1.3 (Deleted Object and Object Name Lifetimes)
-    (glDeleteBuffers               1 (u32vector vertexbuffer))
-    (lambda (alpha)
-      ;; TODO May be useful to cache the state of glUseProgram too, as to not switch shaders too often
-      (glUseProgram (create-program* (load-shader* "source/shaders/fade.vertex.glsl"   GL_VERTEX_SHADER)
-                                     (load-shader* "source/shaders/fade.fragment.glsl" GL_FRAGMENT_SHADER)))
-      (glBindVertexArray           vertexarray)
-      ; (glEnableVertexAttribArray   0)  ; Not needed, is inside the VAO
-      (glUniform1f                 opacity (real->double-flonum alpha))
-      (glDrawArrays                GL_TRIANGLES 0 point-length)
-      ; (glDisableVertexAttribArray  0)  ; Not needed, is inside the VAO
-      (glBindVertexArray           0)    ; Unbinds the VAO
-      )))
+;; Global view that affects most drawing functions
+;; The reason for using a global here is to avoid passing
+;; a view so often, this makes it easier to simply do
+;; a parameterization that stacks with the previous view
+(define *view* (make-parameter (matrix [[1 0 0 0]
+                                        [0 1 0 0]
+                                        [0 0 1 0]
+                                        [0 0 0 1]])))
+
+;; Turning the view into a f32vector is remarkably slow
+;; this speeds it up by 2 orders of magnitude
+(define/memoize (get-view view)
+  (list->f32vector
+    (map real->single-flonum
+      (matrix->list (view)))))
+
+
+(define/memoize-partial fade () (alpha)
+  ((define vertexarray   (u32vector-ref   (glGenVertexArrays 1) 0))
+   (define vertexbuffer  (u32vector-ref   (glGenBuffers      1) 0))
+   (define program-id    (create-program* (load-shader* "source/shaders/fade.vertex.glsl"   GL_VERTEX_SHADER)
+                                   (load-shader* "source/shaders/fade.fragment.glsl" GL_FRAGMENT_SHADER)))
+   (define opacity       (glGetUniformLocation program-id "opacity"))
+   (define points        '((-1 -1) (-1 1) (1 -1) (1 -1)  (-1 1) (1 1)))
+   (define point-length  (length points))
+   (define points*       (list->f32vector (map real->single-flonum (flatten points))))
+   (register-finalizer vertexarray  (lambda (x) (glDeleteVertexArrays 1 (u32vector x))))
+   (define vertex-location (glGetAttribLocation program-id "vertex"))
+   (define dim 2)  ; Dimension of vertices
+   (glBindVertexArray           vertexarray)
+   (glBindBuffer                GL_ARRAY_BUFFER  vertexbuffer)
+   (glVertexAttribPointer       vertex-location dim GL_FLOAT #f 0 #f)
+   (glBufferData                GL_ARRAY_BUFFER
+                                (* (length points) dim size-gl-float)
+                                (f32vector->cpointer points*)
+                                GL_STATIC_DRAW)
+   (glEnableVertexAttribArray   vertex-location)
+   (glBindVertexArray           0)  ; Unbind the VAO, so other draw calls do not affect this one
+   ;; The buffer is referenced by the container object (VAO), so it is not deleted from memory, and this is safe (MUST be after unbinding the VAO)
+   ;; See OpenGL 4.5 spec.: 5.1.2 (Automatic Unbinding of Deleted Objects) and 5.1.3 (Deleted Object and Object Name Lifetimes)
+   (glDeleteBuffers             1 (u32vector vertexbuffer))
+   )
+  ;; TODO May be useful to cache the state of glUseProgram too, as to not switch shaders too often
+  ((glUseProgram (create-program* (load-shader* "source/shaders/fade.vertex.glsl"   GL_VERTEX_SHADER)
+                                  (load-shader* "source/shaders/fade.fragment.glsl" GL_FRAGMENT_SHADER)))
+   (glBindVertexArray           vertexarray)
+   ; (glEnableVertexAttribArray   0)  ; Not needed, is inside the VAO
+   (glUniform1f                 opacity (real->double-flonum alpha))
+   (glDrawArrays                GL_TRIANGLES 0 point-length)
+   ; (glDisableVertexAttribArray  0)  ; Not needed, is inside the VAO
+   (glBindVertexArray           0)    ; Unbinds the VAO
+   ))
 
 ;; Draws a white shape, takes in a set of triangles.
-(define/memoize (draw-white-shape points color)
-  (let* ([vertexarray   (u32vector-ref (glGenVertexArrays 1) 0)]
-         [vertexbuffer  (u32vector-ref (glGenBuffers      1) 0)]
-         [colorbuffer   (u32vector-ref (glGenBuffers      1) 0)]
-         [program-id    (create-program* (load-shader* "source/shaders/shape.vertex.glsl"   GL_VERTEX_SHADER)
-                                         (load-shader* "source/shaders/shape.fragment.glsl" GL_FRAGMENT_SHADER))]
-         [move-loc      (glGetUniformLocation program-id "movement")]
-         [point-length  (length points)]
-         [points*       (list->f32vector (map real->single-flonum (flatten points)))]
-         [color-length  (length color)]
-         [color*        (list->f32vector (map real->single-flonum (flatten color)))])
-    (register-finalizer vertexarray  (lambda (x) (glDeleteVertexArrays 1 (u32vector x))))
-    (define vertex-location (glGetAttribLocation program-id "vertex"))
-    (define color-location (glGetAttribLocation program-id "color"))
-    (define dim 2)  ; Dimension of vertices
-    (define dim-color 4)  ; Dimension of vertices
-    (glBindVertexArray vertexarray)
-    (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
-    (glBufferData GL_ARRAY_BUFFER
-                  (* (length points) dim size-gl-float)
-                  (f32vector->cpointer points*)
-                  GL_STATIC_DRAW)
-    (glVertexAttribPointer vertex-location dim GL_FLOAT #f 0 #f)
-    (glEnableVertexAttribArray     vertex-location)
-    ; (glBindBuffer GL_ARRAY_BUFFER  colorbuffer)
-    ; (glBufferData GL_ARRAY_BUFFER
-    ;               (* (length color) dim-color size-gl-float)
-    ;               (f32vector->cpointer color*)
-    ;               GL_STATIC_DRAW)
-    ; (glVertexAttribPointer color-location dim-color GL_FLOAT #f 0 #f)
-    ; (glEnableVertexAttribArray     color-location)
-    (glBindVertexArray             0)
-    (glDeleteBuffers 1 (u32vector vertexbuffer))
-    (glDeleteBuffers 1 (u32vector colorbuffer))
-    (lambda (x y #:translation [translation (identity-matrix 4)])
-      (glUseProgram (create-program* (load-shader* "source/shaders/shape.vertex.glsl"   GL_VERTEX_SHADER)
-                                     (load-shader* "source/shaders/shape.fragment.glsl" GL_FRAGMENT_SHADER)))
-      (glBindVertexArray  vertexarray)
-      (glUniformMatrix4fv move-loc 1 #f
-                          (list->f32vector
-                            (map real->single-flonum
-                              (matrix->list
-                                (matrix* translation
-                                         (matrix [[1.0 0 0 0]
-                                                  [0 1.0 0 0]
-                                                  [0 0 1.0 0]
-                                                  [x y 0 1]]))))))
-      (glDrawArrays       GL_TRIANGLES 0 point-length)
-      (glBindVertexArray  0)
-      )))
+(define/memoize-partial draw-shape (points color) ()
+  ((define vertexarray   (u32vector-ref (glGenVertexArrays 1) 0))
+   (register-finalizer   vertexarray  (lambda (x) (glDeleteVertexArrays 1 (u32vector x))))
+   ;; TODO perhaps use glGenBuffers 2 for both vertex and color data
+   (define vertexbuffer  (u32vector-ref (glGenBuffers      1) 0))
+   (define colorbuffer   (u32vector-ref (glGenBuffers      1) 0))
+   (define program-id    (create-program* (load-shader* "source/shaders/shape.vertex.glsl"   GL_VERTEX_SHADER)
+                                          (load-shader* "source/shaders/shape.fragment.glsl" GL_FRAGMENT_SHADER)))
+   (define move-loc      (glGetUniformLocation program-id "movement"))
+   (define point-length  (length points))
+   (define points*       (list->f32vector (map real->single-flonum (flatten points))))
+   (define color-length  (length color))
+   (define color*        (list->f32vector (map real->single-flonum (flatten color))))
+   (define vertex-location (glGetAttribLocation program-id "vertex"))
+   (define color-location (glGetAttribLocation program-id "color"))
+   (define dim-vertex 2)  ; Dimension of vertices
+   (define dim-color  4)  ; Dimension of color
+   (glBindVertexArray           vertexarray)
+   (glBindBuffer                GL_ARRAY_BUFFER vertexbuffer)
+   (glBufferData                GL_ARRAY_BUFFER
+                                (* (length points) dim-vertex size-gl-float)
+                                (f32vector->cpointer points*)
+                                GL_STATIC_DRAW)
+   (glVertexAttribPointer       vertex-location dim-vertex GL_FLOAT #f 0 #f)
+   (glEnableVertexAttribArray   vertex-location)
+   (glBindBuffer                GL_ARRAY_BUFFER  colorbuffer)
+   (glBufferData                GL_ARRAY_BUFFER
+                                (* (length color) dim-color size-gl-float)
+                                (f32vector->cpointer color*)
+                                GL_STATIC_DRAW)
+   (glVertexAttribPointer       color-location dim-color GL_FLOAT #f 0 #f)
+   (glEnableVertexAttribArray   color-location)
+   (glBindVertexArray           0)
+   (glDeleteBuffers             1 (u32vector vertexbuffer))
+   (glDeleteBuffers             1 (u32vector colorbuffer))
+   )
+  ((glUseProgram (create-program* (load-shader* "source/shaders/shape.vertex.glsl"   GL_VERTEX_SHADER)
+                                  (load-shader* "source/shaders/shape.fragment.glsl" GL_FRAGMENT_SHADER)))
+   (glBindVertexArray    vertexarray)
+   (glUniformMatrix4fv   move-loc 1 #f (get-view *view*))
+   (glDrawArrays         GL_TRIANGLES 0 point-length)
+   (glBindVertexArray    0)
+   ))
 
-(define (draw-previous-frame x y)
-  (define tex (create-blank-texture x y))
-  (glReadBuffer GL_BACK)
-  (glCopyTexSubImage2D GL_TEXTURE_2D 0 0 0 0 0 x y)
-  (lambda ()
-    (draw-texture-obj tex)))
+;; Used mainly during transitions
+(define (get-previous-frame width height)
+  (define texture        (create-blank-texture width height))
+  (glReadBuffer          GL_BACK)
+  (glCopyTexSubImage2D   GL_TEXTURE_2D 0 0 0 0 0 width height)
+  texture)
 
-(define (create-blank-texture w h)
-  (define tex (u32vector-ref (glGenTextures 1) 0))
-  (glBindTexture GL_TEXTURE_2D tex)
-  (glPixelStorei GL_UNPACK_ALIGNMENT 1)
-  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
-  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
-  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
-  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
-  ; (glTexEnvf GL_TEXTURE_ENV GL_TEXTURE_ENV_MODE GL_MODULATE)
-  (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA w h 0 GL_RGBA GL_UNSIGNED_BYTE 0)
-  tex)
+;; The returned texture is registered in the GC and will be dealt with gracefully
+(define (create-blank-texture width height)
+  (define texture    (u32vector-ref (glGenTextures 1) 0))
+  (register-finalizer texture (lambda (x) (glDeleteTextures 1 (u32vector x))))
+  (glBindTexture     GL_TEXTURE_2D texture)
+  (glPixelStorei     GL_UNPACK_ALIGNMENT 1)
+  (glTexParameteri   GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
+  (glTexParameteri   GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
+  (glTexParameteri   GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
+  (glTexParameteri   GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
+  (glTexImage2D      GL_TEXTURE_2D 0 GL_RGBA width height 0 GL_RGBA GL_UNSIGNED_BYTE 0)
+  texture)
 
-(define (draw-texture-obj tx)
-  (define program-id (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
-                                 (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
-  (glUseProgram program-id)
-  (define points* (list->f32vector (map real->single-flonum '(
-                                            -1 -1    0  0
-                                            -1  1    0  1
-                                             1 -1    1  0
-                                            -1  1    0  1
-                                             1  1    1  1
-                                             1 -1    1  0
-                                            ))))
-  (define tex-loc (glGetUniformLocation program-id "texture"))
-  (define move-loc (glGetUniformLocation program-id "movement"))
-  (define vertexbuffer  (u32vector-ref (glGenBuffers 1) 0))
-  ; (glBindVertexArray vertexarray)
-  (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
-  (glBufferData GL_ARRAY_BUFFER
-                (* (f32vector-length points*) 4)
-                (f32vector->cpointer points*)
-                GL_STATIC_DRAW)
-  (glEnableVertexAttribArray 0)
-  (glEnableVertexAttribArray 1)
-  (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
-  (glVertexAttribPointer 0 2 GL_FLOAT #f 16 #f)
-  (glVertexAttribPointer 1 2 GL_FLOAT #f 16 8)
-
-  (glActiveTexture GL_TEXTURE0)
-  (glUniform1i tex-loc #|GL_TEXTURE|# 0)
-  (glBindTexture GL_TEXTURE_2D tx)
-
-  (glUniformMatrix4fv move-loc 1 #f
-                      (list->f32vector
-                        (map real->single-flonum
-                          (matrix->list
-                            (matrix* (matrix [[1.0 0 0 0]
-                                              [0 1.0 0 0]
-                                              [0 0 1.0 0]
-                                              [0 0 0 1]]))))))
-  (glDrawArrays GL_TRIANGLES 0 6)
-
-  (glDisableVertexAttribArray 1)
-  (glDisableVertexAttribArray 0))
+(define/memoize-partial draw-texture-fullscreen () (texture)
+  ((define program-id (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
+                                       (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
+   (define points* (list->f32vector (map real->single-flonum '(
+                                             -1 -1    0  0
+                                             -1  1    0  1
+                                              1 -1    1  0
+                                             -1  1    0  1
+                                              1  1    1  1
+                                              1 -1    1  0))))
+   (define tex-loc (glGetUniformLocation program-id "texture"))
+   (define move-loc (glGetUniformLocation program-id "movement"))
+   (define vertex   (glGetAttribLocation program-id "vertex"))
+   (define vertex-uv   (glGetAttribLocation program-id "vertex_uv"))
+   (define vertexarray   (u32vector-ref (glGenVertexArrays 1) 0))
+   (define vertexbuffer  (u32vector-ref (glGenBuffers 1) 0))
+   (define dim 2)
+   (glBindVertexArray vertexarray)
+   (glBindBuffer GL_ARRAY_BUFFER vertexbuffer)
+   (glBufferData GL_ARRAY_BUFFER
+                 (* (f32vector-length points*) size-gl-float)
+                 (f32vector->cpointer points*)
+                 GL_STATIC_DRAW)
+   (glEnableVertexAttribArray vertex)
+   (glEnableVertexAttribArray vertex-uv)
+   (glVertexAttribPointer     vertex     dim GL_FLOAT #f 16 #f)
+   (glVertexAttribPointer     vertex-uv  dim GL_FLOAT #f 16  8)
+   (glBindVertexArray         0)
+   (glDeleteBuffers           1 (u32vector vertexbuffer))
+  )
+  ((glUseProgram (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
+                                  (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
+   (glBindVertexArray vertexarray)
+   (glActiveTexture GL_TEXTURE0)
+   (glUniform1i tex-loc #|GL_TEXTURE|# 0)
+   (glBindTexture GL_TEXTURE_2D texture)
+   (glUniformMatrix4fv move-loc 1 #f (get-view *view*))
+   (glDrawArrays GL_TRIANGLES 0 6)
+   (glBindVertexArray 0)
+  ))
 
 (define/memoize (load-texture* file) #:finalize (lambda (x) (glDeleteTextures 1 (u32vector x)) (erro 'del) (exit))
   (load-texture file #:mipmap #t))
@@ -227,7 +235,7 @@
     (glBindFramebuffer GL_FRAMEBUFFER 0)
     (glViewport 0 0 800 600))
   (
-   (draw-texture-obj tex)
+   (draw-texture-fullscreen tex)
    ))
 
 (define (scale c)

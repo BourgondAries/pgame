@@ -61,12 +61,12 @@
   ))
 
 (define (do-fade window)
-  (define tex2 (draw-previous-frame 800 600))
+  (define texture (get-previous-frame 800 600))
   (glClearColor 0. 0. 0. 0.)
   (for ([i 40])
     (glClear GL_COLOR_BUFFER_BIT)
-    (tex2)
-    ((fade) (/ i 30))
+    (draw-texture-fullscreen texture)
+    (fade (/ i 30))
     (glfwSwapBuffers window))
   (glClearColor 0.3 0.8 0.3 0.))
 
@@ -131,8 +131,8 @@
   ((animate-texture "data/basictiles.png" '(-1 -1) '(-0.5 -0.5) 8 15)
    x y)
   (draw-tiles "data/basictiles.png" 8 15 grass (scale 5/100) 0)
-  ((draw-white-shape '((-1 1 0) (0.5 1 0) (0.5 0.5 0))
-                     '((0 0 0 0) (0 1 0 0) (1 0 0 1))) 0 0)
+  (draw-shape '((-1 1) (0.5 1) (0.5 0.5))
+              '((0 0 0 0) (0 1 0 0) (1 0 0 1)))
   )
 
 ;; This is a scene. Very simple, H~>-oriented
