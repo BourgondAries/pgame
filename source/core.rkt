@@ -110,8 +110,8 @@
     (render-absolute  ())
     (draw             (system.transform game.tick.direction-keys game.last-direction system.animation.madotsuki))
     (draw-relative    (system.transform system.render.relative))
-    (fade/invert            (game.tick.to-zero))
     (aa (game.tick.iteration))
+    (fade/invert            (game.tick.to-zero))
     (glfwSwapBuffers        (system.window))
     )
   (pure
@@ -131,6 +131,8 @@
   ((animate-texture "data/basictiles.png" '(-1 -1) '(-0.5 -0.5) 8 15)
    x y)
   (draw-tiles "data/basictiles.png" 8 15 grass (scale 5/100) 0)
+  ((draw-white-shape '((-1 1 0) (0.5 1 0) (0.5 0.5 0))
+                     '((0 0 0 0) (0 1 0 0) (1 0 0 1))) 0 0)
   )
 
 ;; This is a scene. Very simple, H~>-oriented
