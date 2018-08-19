@@ -19,6 +19,24 @@
          glfw3 logger memo nested-hash spipe
          "breakpoint.rkt" "drawing.rkt" "initialization.rkt" "pure.rkt")
 
+(define-syntax-parser push-view
+  ([_ view:expr body:expr ...+]
+   #'(parameterize ([*view* (matrix* view (*view*))])
+      body ...)))
+
+(define grass (make-list 20 (make-list 20 49)))
+(define (do-draw-tiles tick persp)
+  (push-view persp
+    ; (trce tick)
+    (define-values (x y) (ticker (quotient tick 60) 8 15))
+    (trce (quotient tick 60))
+    ((animate-texture "data/basictiles.png" '(-1 -1) '(-0.5 -0.5) 8 15)
+     x y)
+    (draw-tiles "data/basictiles.png" 8 15 grass (scale 5/100) 0)
+    (draw-shape '((-1 1) (0.5 1) (0.5 0.5))
+                '((0 0 0 0) (0 1 0 0) (1 0 0 1)))
+  ))
+
 
 (define (clear-graphics)
   (glClear GL_COLOR_BUFFER_BIT))
@@ -70,7 +88,7 @@
         (matrix [[0.1 0 0 0]
                  [0 0.1 0 0]
                  [0 0 0.1 0]
-                 [0 0 0  1]])
+                 [0 0 0   1]])
         ))
     (identity-matrix 4)))
 

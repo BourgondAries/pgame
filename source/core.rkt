@@ -52,27 +52,32 @@
            [0       0           1 0]
            [0       0           0 1]]))
 
+(define ((every tick-modulus action) tick value)
+  (if (zero? (modulo tick tick-modulus))
+    (begin (action value) value)
+    value
+    ))
+
 (define (sub state)
-  (parameterize ([*view* (matrix* (rotate (nested-hash-ref state 'game 'rotation)) (perspective (nested-hash-ref state 'system 'window-size 'width)
-                                                                                                (nested-hash-ref state 'system 'window-size 'height))
+  (parameterize ([*view* (matrix* (rotate (nested-hash-ref state 'game 'rotation)) (perspective (nested-hash-ref state 'system 'window-size 'width #:default #f)
+                                                                                                (nested-hash-ref state 'system 'window-size 'height #:default #f))
                                                (*view*))])
-    (trce (*view*))
     (H~>
       state
-      (render-absolute  ())
-      (draw             (system.transform game.tick.direction-keys system.last-direction system.animation.madotsuki))
-      (draw-relative    (system.transform system.render.relative))
-      (drawtext               (game.tick.direction-keys))
-      (draw-coin (game.tick.iteration)))))
+      (render-absolute   ())
+      (draw              (system.transform game.tick.direction-keys system.last-direction system.animation.madotsuki))
+      (draw-relative     (system.transform system.render.relative))
+      (drawtext          (game.tick.direction-keys))
+      (draw-coin         (game.tick.iteration)))))
 
 (define (core* state)
   (H~> state
-    (glfwGetWindowSize (system.window) (system.window-size.width system.window-size.height))
-    (trce (system.window-size))
-    (clear-graphics   ())
-    ((if* add1)       (game.any-direction-keys?
-                       game.tick.direction-keys)
-                      (game.tick.direction-keys))
+    (glfwGetWindowSize      (system.window) (system.window-size.width system.window-size.height))
+    ; ((every 60 displayln)   (game.tick.iteration system.window-size) (system.window-size))
+    (clear-graphics         ())
+    ((if* add1)             (game.any-direction-keys?
+                            game.tick.direction-keys)
+                            (game.tick.direction-keys))
     (sub *)
     (glfwSwapBuffers        (system.window))
     (get-keys               (system.window) (game.keys))
@@ -91,8 +96,8 @@
     (make-global-transform      (game.transform)            (system.transform))
   ))
 
-(define (do-fade window)
-  (define texture (get-previous-frame 800 600))
+(define (do-fade window width height)
+  (define texture (get-previous-frame width height))
   (glClearColor 0. 0. 0. 0.)
   (for ([i 40])
     (glClear GL_COLOR_BUFFER_BIT)
@@ -132,20 +137,23 @@
            post-body ...
            )))))
 
-(define (dd)
-  (draw-texture "data/text/main-text2.png" '(-1 -1) '(1 1)))
+(define (dd persp)
+  (parameterize ([*view* (matrix* persp (*view*))])
+    (draw-texture "data/text/main-text2.png" '(-1 -1) '(1 1))))
 
 (node experiment state
   (enter
-    (do-fade       (system.window))
+    (do-fade       (system.window system.window-size.width system.window-size.height))
     )
   (pre
-    (clear-graphics   ())
-    (dd ())
-    (aa (game.tick.iteration))
-    (render-absolute  ())
-    (draw             (system.transform game.tick.direction-keys game.last-direction system.animation.madotsuki))
-    (draw-relative    (system.transform system.render.relative))
+    (glfwGetWindowSize      (system.window) (system.window-size.width system.window-size.height))
+    (perspective            (system.window-size.width system.window-size.height) (system.graphics.perspective))
+    (clear-graphics    ())
+    (dd                (system.graphics.perspective))
+    (do-draw-tiles     (game.tick.iteration system.graphics.perspective))
+    (render-absolute   ())
+    (draw              (system.transform game.tick.direction-keys game.last-direction system.animation.madotsuki))
+    (draw-relative     (system.transform system.render.relative))
     (fade/invert            (game.tick.to-zero))
     (glfwSwapBuffers        (system.window))
     (get-keys               (system.window) (game.keys))
@@ -167,25 +175,13 @@
   (exit)
   )
 
-(define grass (make-list 20 (make-list 20 49)))
-
-(define (aa tick)
-  ; (trce tick)
-  (define-values (x y) (ticker (quotient tick 60) 8 15))
-  (trce (quotient tick 60))
-  ((animate-texture "data/basictiles.png" '(-1 -1) '(-0.5 -0.5) 8 15)
-   x y)
-  (draw-tiles "data/basictiles.png" 8 15 grass (scale 5/100) 0)
-  (draw-shape '((-1 1) (0.5 1) (0.5 0.5))
-              '((0 0 0 0) (0 1 0 0) (1 0 0 1)))
-  )
 
 ;; This is a scene. Very simple, H~>-oriented
 (node top-map state
   (enter
     ((const -100)  game.transform.y)
     ((const  120)  game.tick.to-zero)
-    (do-fade       (system.window))
+    (do-fade       (system.window system.window-size.width system.window-size.height))
     )
   (pre
     (clear-graphics   ())
