@@ -32,7 +32,9 @@
     ([< x value] (add1 x))))
 
 (define ((set-fsm symbol) fsm)
-  (cons symbol (rest fsm)))
+  (if (empty? fsm)
+      (list symbol)
+      (cons symbol (rest fsm))))
 
 (define (ticker v x y)
   (values (modulo v x)

@@ -10,7 +10,7 @@
          "breakpoint.rkt" "drawing.rkt" "impure.rkt" "initialization.rkt" "pure.rkt" "shutdown.rkt")
 (require "states/core.rkt" "states/experimental.rkt" "states/menu.rkt" "states/top-map.rkt")
 (require "visualizer.rkt" (for-syntax racket/base racket/syntax))
-(require "state.rkt")
+(require "state.rkt" "states/initializing.rkt")
 
 (define-namespace-anchor anchor)
 (define ns (namespace-anchor->namespace anchor))
@@ -32,6 +32,6 @@
   (with-handlers* ([exn:break? (lambda (_) (break state cleanup))])
     (cond
       ([break-seen?]         (break state cleanup))
-      ([empty? state]        (initialize state))
+      ([empty? state]        (initializing state))
       ([should-exit? state]  (break state cleanup))
       (else                  ((meval (first (nested-hash-ref state 'game 'fsm))) state)))))
