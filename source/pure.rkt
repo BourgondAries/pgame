@@ -49,6 +49,8 @@
     (sub1-if-true (keys.a transform.x) (transform.x))
     (sub1-if-true (keys.s transform.y) (transform.y))
     (add1-if-true (keys.d transform.x) (transform.x))
+    (sub1-if-true (keys.q rotation) (rotation))
+    (add1-if-true (keys.e rotation) (rotation))
     (and (keys.d keys.b keys.g keys.escape) (dbg-esc?))
     ((if* (push-fsm 'menu)) (keys.escape fsm) (fsm))
   ))

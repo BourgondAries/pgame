@@ -46,9 +46,15 @@
              [0                0 0 1]])
   (identity-matrix 4)))
 
+(define (rotate r)
+  (matrix [[(cos r) (- (sin r)) 0 0]
+           [(sin r) (cos r)     0 0]
+           [0       0           1 0]
+           [0       0           0 1]]))
+
 (define (sub state)
-  (parameterize ([*view* (matrix* (perspective (nested-hash-ref state 'system 'window-size 'width)
-                                               (nested-hash-ref state 'system 'window-size 'height))
+  (parameterize ([*view* (matrix* (rotate (nested-hash-ref state 'game 'rotation)) (perspective (nested-hash-ref state 'system 'window-size 'width)
+                                                                                                (nested-hash-ref state 'system 'window-size 'height))
                                                (*view*))])
     (trce (*view*))
     (H~>

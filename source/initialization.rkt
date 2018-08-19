@@ -50,6 +50,7 @@
     ((push-fsm 'core*)  game.fsm)
     ((const 0)          game.tick.direction-keys)
     ((const 0)          game.tick.iteration)
+    ((const 0)          game.rotation)
   ))
 
 (define (add-sprites*)
