@@ -233,13 +233,11 @@
   ((define runs  (animate-texture file '(-1 -1) '(1 1) horizontal-panes vertical-panes))
    (define fbo   (u32vector-ref (glGenFramebuffers 1) 0))
    (glBindFramebuffer GL_FRAMEBUFFER fbo)
-
    (define tex (create-blank-texture 800 600))
    (glFramebufferTexture GL_FRAMEBUFFER GL_COLOR_ATTACHMENT0 tex 0)
    (when (not (= GL_FRAMEBUFFER_COMPLETE (glCheckFramebufferStatus GL_FRAMEBUFFER)))
      (ftal^ "Unable to create framebuffer")
      (exit 3))
-   (glBindFramebuffer GL_FRAMEBUFFER fbo)
    (glViewport 0 0 800 600)
    (for/fold ([y* 0])
              ([tile-line tiles])

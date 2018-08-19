@@ -8,6 +8,8 @@
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
          "breakpoint.rkt" "drawing.rkt" "impure.rkt" "initialization.rkt" "pure.rkt" "shutdown.rkt")
+(require "states/experimental.rkt")
+(require "visualizer.rkt" (for-syntax racket/base racket/syntax))
 
 (define-namespace-anchor anchor)
 (define ns (namespace-anchor->namespace anchor))
@@ -35,22 +37,6 @@
 
 (define (draw-coin tick)
   (animate "data/coin48.png" '(0.1 0.1) '(0.2 0.2) 61 1 tick 5))
-
-(define (perspective width height)
-  (when (and width height)
-    (glViewport 0 0 width height))
-  (if (and width height)
-    (matrix [[(/ height width) 0 0 0]
-             [0                1 0 0]
-             [0                0 1 0]
-             [0                0 0 1]])
-  (identity-matrix 4)))
-
-(define (rotate r)
-  (matrix [[(cos r) (- (sin r)) 0 0]
-           [(sin r) (cos r)     0 0]
-           [0       0           1 0]
-           [0       0           0 1]]))
 
 (define ((every tick-modulus action) tick value)
   (if (zero? (modulo tick tick-modulus))
@@ -96,88 +82,11 @@
     (make-global-transform      (game.transform)            (io.transform))
   ))
 
-(define (do-fade window width height)
-  (define texture (get-previous-frame width height))
-  (glClearColor 0. 0. 0. 0.)
-  (for ([i 40])
-    (glClear GL_COLOR_BUFFER_BIT)
-    (draw-texture-fullscreen texture)
-    (fade (/ i 30))
-    (glfwSwapBuffers window))
-  (glClearColor 0.3 0.8 0.3 0.))
 
-(require "visualizer.rkt" (for-syntax racket/base racket/syntax))
-
-(define-syntax-parser node
-  ([_ name state
-      ((~datum enter)
-       enter-body ...)
-      ((~datum pre)
-       pre-body ...)
-      ((~datum pure)
-       pure-body ...)
-      ((~datum post)
-       post-body ...)
-      ((~datum exit)
-       exit-body ...)]
-   #:with name-core (format-id #'name "~a-core" #'name)
-   #'(begin
-       (define (name state)
-         (trce^ name)
-         (H~>
-           state
-           enter-body ...
-           ((set-fsm 'name-core) game.fsm)))
-       (define (name-core state)
-         (H~>
-           state
-           pre-body ...
-           ((lambda (game)
-            (H~> game pure-body ...)) game)
-           post-body ...
-           )))))
-
-(define (dd persp)
-  (parameterize ([*view* (matrix* persp (*view*))])
-    (draw-texture "data/text/main-text2.png" '(-1 -1) '(1 1))))
-
-(node experiment state
-  (enter
-    (do-fade       (io.window io.window-size.width io.window-size.height))
-    )
-  (pre
-    (glfwGetWindowSize      (io.window) (io.window-size.width io.window-size.height))
-    (perspective            (io.window-size.width io.window-size.height) (io.graphics.perspective))
-    (clear-graphics    ())
-    (dd                (io.graphics.perspective))
-    (do-draw-tiles     (game.tick.iteration io.graphics.perspective))
-    (render-absolute   ())
-    (draw              (io.transform game.tick.direction-keys game.last-direction io.animation.madotsuki))
-    (draw-relative     (io.transform io.render.relative))
-    (fade/invert            (game.tick.to-zero))
-    (glfwSwapBuffers        (io.window))
-    (get-keys               (io.window) (game.keys))
-    )
-  (pure
-    (collect-wasd           (keys) (keys.wasd))
-    (last-key               (last-direction keys.wasd) (last-direction))
-    ((step-to 0)  tick.to-zero)
-    (pure *)
-    (add1 tick.iteration)
-    (any-direction-keys?       (keys)                 (any-direction-keys?))
-    ((if* add1)       (any-direction-keys?
-                       tick.direction-keys)
-                      (tick.direction-keys))
-    )
-  (post
-    (make-global-transform     (game.transform)            (io.transform))
-    )
-  (exit)
-  )
-
+(require "state.rkt")
 
 ;; This is a scene. Very simple, H~>-oriented
-(node top-map state
+(state top-map
   (enter
     ((const -100)  game.transform.y)
     ((const  120)  game.tick.to-zero)
@@ -202,7 +111,7 @@
     (add1                      tick.iteration)
     (check-door-collision      (transform.x transform.y)  (collides?))
     ((if* (set-fsm 'top-map))  (collides? fsm)            (fsm))
-    ((set-fsm 'experiment)      fsm)
+    ((set-fsm 'experimental)      fsm)
     (any-direction-keys?       (keys)                 (any-direction-keys?))
     ((if* add1)       (any-direction-keys?
                        tick.direction-keys)
@@ -214,16 +123,6 @@
   (exit)
   )
 
-
-(define (collect-wasd keys)
-  (or
-    (if (hash-ref keys 'a #f) 'a #f)
-    (if (hash-ref keys 'd #f) 'd #f)
-    (if (hash-ref keys 'w #f) 'w #f)
-    (if (hash-ref keys 's #f) 's #f)))
-
-(define (check-door-collision x y)
-  (and (< -20 x 20) (> 130 y 100)))
 
 
 (define (menu state)

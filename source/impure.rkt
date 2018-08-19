@@ -24,6 +24,46 @@
    #'(parameterize ([*view* (matrix* view (*view*))])
       body ...)))
 
+(define (do-fade window width height)
+  (define texture (get-previous-frame width height))
+  (glClearColor 0. 0. 0. 0.)
+  (for ([i 40])
+    (glClear GL_COLOR_BUFFER_BIT)
+    (draw-texture-fullscreen texture)
+    (fade (/ i 30))
+    (glfwSwapBuffers window))
+  (glClearColor 0.3 0.8 0.3 0.))
+
+(define (collect-wasd keys)
+  (or
+    (if (hash-ref keys 'a #f) 'a #f)
+    (if (hash-ref keys 'd #f) 'd #f)
+    (if (hash-ref keys 'w #f) 'w #f)
+    (if (hash-ref keys 's #f) 's #f)))
+
+(define (check-door-collision x y)
+  (and (< -20 x 20) (> 130 y 100)))
+
+(define (dd persp)
+  (parameterize ([*view* (matrix* persp (*view*))])
+    (draw-texture "data/text/main-text2.png" '(-1 -1) '(1 1))))
+
+(define (perspective width height)
+  (when (and width height)
+    (glViewport 0 0 width height))
+  (if (and width height)
+    (matrix [[(/ height width) 0 0 0]
+             [0                1 0 0]
+             [0                0 1 0]
+             [0                0 0 1]])
+  (identity-matrix 4)))
+
+(define (rotate r)
+  (matrix [[(cos r) (- (sin r)) 0 0]
+           [(sin r) (cos r)     0 0]
+           [0       0           1 0]
+           [0       0           0 1]]))
+
 (define grass (make-list 20 (make-list 20 49)))
 (define (do-draw-tiles tick persp)
   (push-view persp
