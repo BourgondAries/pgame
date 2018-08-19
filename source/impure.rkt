@@ -152,3 +152,25 @@
 
 (define/memoize (draw-texture/uv* lst)
   (apply draw-texture/uv lst))
+
+(define (draw-coin tick)
+  (animate "data/coin48.png" '(0.1 0.1) '(0.2 0.2) 61 1 tick 5))
+
+(define ((every tick-modulus action) tick value)
+  (if (zero? (modulo tick tick-modulus))
+    (begin (action value) value)
+    value
+    ))
+
+(define (sub state)
+  (parameterize ([*view* (matrix* (rotate (nested-hash-ref state 'game 'rotation)) (perspective (nested-hash-ref state 'io 'window-size 'width #:default #f)
+                                                                                                (nested-hash-ref state 'io 'window-size 'height #:default #f))
+                                               (*view*))])
+    (H~>
+      state
+      (render-absolute   ())
+      (draw              (io.transform game.tick.direction-keys io.last-direction io.animation.madotsuki))
+      (draw-relative     (io.transform io.render.relative))
+      (drawtext          (game.tick.direction-keys))
+      (draw-coin         (game.tick.iteration)))))
+
