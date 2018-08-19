@@ -1,0 +1,60 @@
+digraph G {
+  compound = true;
+  M [label = "fsm-master"];
+  start [style = filled , fillcolor = green];
+
+  start -> initialization -> M;
+  subgraph cluster_IO {
+    label = "IO functions (audio, files, graphics, threads)";
+    style = filled;
+    fillcolor = orange;
+    drawing;
+    filesystem;
+  }
+  subgraph cluster_S {
+    label = "FSM States";
+    style = filled;
+    fillcolor = green;
+    core;
+    menu;
+    escape;
+  }
+  subgraph cluster_PURE {
+    label = "Pure functions";
+    style = filled;
+    fillcolor = green;
+    pure_dummy [style = invis];
+    transformation;
+  }
+  subgraph cluster_EXT {
+    label = "External libraries";
+    style = filled;
+    fillcolor = red;
+    glfw;
+    opengl;
+  }
+  subgraph cluster_T {
+    label = "Example state\nAll states are made up\nof 5 functions.";
+    enter -> pre;
+    enter [style = filled , fillcolor = orange , xlabel = "Sets up state so the loop can run correctly"];
+    subgraph cluster_L {
+      label = "Runs in a loop until\nanother state is requested";
+      pre -> pure -> post -> pre;
+      pre [style = filled , fillcolor = orange , xlabel = "Pre-pure processing"];
+      pure [style = filled , fillcolor = green , xlabel = "The pure part of a state transition"];
+      post [style = filled , fillcolor = orange , xlabel = "Post-pure processing"];
+    }
+    post -> exit;
+    exit [style = filled , fillcolor = orange , xlabel = "Destroy parts of state"];
+  }
+
+  core -> enter [label = "Contains" , lhead = cluster_T];
+  M -> menu [label = "Jumps into" , lhead = cluster_S];
+  menu -> M [label = "Trampolines" , ltail = cluster_S];
+
+  core -> drawing [label = "Uses" , lhead = cluster_IO , ltail = cluster_S];
+  escape -> pure_dummy [label = "Uses" , lhead = cluster_PURE , ltail = cluster_S];
+
+  drawing -> transformation [label = "Uses" , lhead = cluster_PURE, ltail = cluster_IO];
+  filesystem -> glfw [label = "Uses" , lhead = cluster_EXT , ltail = cluster_IO];
+}
