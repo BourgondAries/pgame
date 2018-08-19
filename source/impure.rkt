@@ -77,7 +77,6 @@
                 '((0 0 0 0) (0 1 0 0) (1 0 0 1)))
   ))
 
-
 (define (clear-graphics)
   (glClear GL_COLOR_BUFFER_BIT))
 
@@ -162,6 +161,9 @@
     value
     ))
 
+(define (get-window-size window)
+  (glfwGetWindowSize window))
+
 (define (sub state)
   (parameterize ([*view* (matrix* (rotate (nested-hash-ref state 'ae 'rotation)) (perspective (nested-hash-ref state 'io 'window-size 'width #:default #f)
                                                                                                 (nested-hash-ref state 'io 'window-size 'height #:default #f))
@@ -169,8 +171,7 @@
     (H~>
       state
       (render-absolute   ())
-      (draw              (io.transform ae.tick.direction-keys io.last-direction io.animation.madotsuki))
+      (draw              (io.transform ae.tick.direction-keys ae.last-direction io.animation.madotsuki))
       (draw-relative     (io.transform io.render.relative))
       (drawtext          (ae.tick.direction-keys))
       (draw-coin         (ae.tick.iteration)))))
-

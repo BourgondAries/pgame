@@ -14,6 +14,15 @@
 (require racket/list
          nested-hash spipe
          syntax/parse/define (for-syntax racket/base))
+(define-syntax-parser expand-single
+  ([_ value:expr fn:id]
+   #'(fn value))
+  ([_ value:expr (fn:expr arg ...)]
+   #'(fn value arg ...)))
+(define-syntax-parser context
+  ([_ value:expr operand:expr ...]
+   #'(let ([result value])
+       (expand-single result operand) ...)))
 
 (define (set-false x) #f)
 
