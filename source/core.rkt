@@ -59,31 +59,31 @@
     ))
 
 (define (sub state)
-  (parameterize ([*view* (matrix* (rotate (nested-hash-ref state 'game 'rotation)) (perspective (nested-hash-ref state 'system 'window-size 'width #:default #f)
-                                                                                                (nested-hash-ref state 'system 'window-size 'height #:default #f))
+  (parameterize ([*view* (matrix* (rotate (nested-hash-ref state 'game 'rotation)) (perspective (nested-hash-ref state 'io 'window-size 'width #:default #f)
+                                                                                                (nested-hash-ref state 'io 'window-size 'height #:default #f))
                                                (*view*))])
     (H~>
       state
       (render-absolute   ())
-      (draw              (system.transform game.tick.direction-keys system.last-direction system.animation.madotsuki))
-      (draw-relative     (system.transform system.render.relative))
+      (draw              (io.transform game.tick.direction-keys io.last-direction io.animation.madotsuki))
+      (draw-relative     (io.transform io.render.relative))
       (drawtext          (game.tick.direction-keys))
       (draw-coin         (game.tick.iteration)))))
 
 (define (core* state)
   (H~> state
-    (glfwGetWindowSize      (system.window) (system.window-size.width system.window-size.height))
-    ; ((every 60 displayln)   (game.tick.iteration system.window-size) (system.window-size))
+    (glfwGetWindowSize      (io.window) (io.window-size.width io.window-size.height))
+    ; ((every 60 displayln)   (game.tick.iteration io.window-size) (io.window-size))
     (clear-graphics         ())
     ((if* add1)             (game.any-direction-keys?
                             game.tick.direction-keys)
                             (game.tick.direction-keys))
     (sub *)
-    (glfwSwapBuffers        (system.window))
-    (get-keys               (system.window) (game.keys))
-    (glfwWindowShouldClose  (system.window) (game.should-exit?))
+    (glfwSwapBuffers        (io.window))
+    (get-keys               (io.window) (game.keys))
+    (glfwWindowShouldClose  (io.window) (game.should-exit?))
     (collect-wasd           (game.keys) (game.keys.wasd))
-    (last-key               (system.last-direction game.keys.wasd) (system.last-direction))
+    (last-key               (io.last-direction game.keys.wasd) (io.last-direction))
     (pure   game)
     ((lambda (game)
        (H~> game
@@ -93,7 +93,7 @@
     (check-door-collision       (game.transform.x game.transform.y)  (game.collides?))
     ((if* (push-fsm 'top-map))  (game.collides? game.fsm)            (game.fsm))
     (any-direction-keys?        (game.keys)                 (game.any-direction-keys?))
-    (make-global-transform      (game.transform)            (system.transform))
+    (make-global-transform      (game.transform)            (io.transform))
   ))
 
 (define (do-fade window width height)
@@ -143,20 +143,20 @@
 
 (node experiment state
   (enter
-    (do-fade       (system.window system.window-size.width system.window-size.height))
+    (do-fade       (io.window io.window-size.width io.window-size.height))
     )
   (pre
-    (glfwGetWindowSize      (system.window) (system.window-size.width system.window-size.height))
-    (perspective            (system.window-size.width system.window-size.height) (system.graphics.perspective))
+    (glfwGetWindowSize      (io.window) (io.window-size.width io.window-size.height))
+    (perspective            (io.window-size.width io.window-size.height) (io.graphics.perspective))
     (clear-graphics    ())
-    (dd                (system.graphics.perspective))
-    (do-draw-tiles     (game.tick.iteration system.graphics.perspective))
+    (dd                (io.graphics.perspective))
+    (do-draw-tiles     (game.tick.iteration io.graphics.perspective))
     (render-absolute   ())
-    (draw              (system.transform game.tick.direction-keys game.last-direction system.animation.madotsuki))
-    (draw-relative     (system.transform system.render.relative))
+    (draw              (io.transform game.tick.direction-keys game.last-direction io.animation.madotsuki))
+    (draw-relative     (io.transform io.render.relative))
     (fade/invert            (game.tick.to-zero))
-    (glfwSwapBuffers        (system.window))
-    (get-keys               (system.window) (game.keys))
+    (glfwSwapBuffers        (io.window))
+    (get-keys               (io.window) (game.keys))
     )
   (pure
     (collect-wasd           (keys) (keys.wasd))
@@ -170,7 +170,7 @@
                       (tick.direction-keys))
     )
   (post
-    (make-global-transform     (game.transform)            (system.transform))
+    (make-global-transform     (game.transform)            (io.transform))
     )
   (exit)
   )
@@ -181,18 +181,18 @@
   (enter
     ((const -100)  game.transform.y)
     ((const  120)  game.tick.to-zero)
-    (do-fade       (system.window system.window-size.width system.window-size.height))
+    (do-fade       (io.window io.window-size.width io.window-size.height))
     )
   (pre
     (clear-graphics   ())
     (render-absolute  ())
-    (draw             (system.transform game.tick.direction-keys game.last-direction system.animation.madotsuki))
-    (draw-relative    (system.transform system.render.relative))
+    (draw             (io.transform game.tick.direction-keys game.last-direction io.animation.madotsuki))
+    (draw-relative    (io.transform io.render.relative))
     (fade/invert            (game.tick.to-zero))
     ; (trce game.tick.to-zero)
-    (glfwSwapBuffers        (system.window))
-    (get-keys               (system.window) (game.keys))
-    (glfwWindowShouldClose  (system.window) (game.should-exit?))
+    (glfwSwapBuffers        (io.window))
+    (get-keys               (io.window) (game.keys))
+    (glfwWindowShouldClose  (io.window) (game.should-exit?))
     )
   (pure
     (collect-wasd           (keys) (keys.wasd))
@@ -209,7 +209,7 @@
                       (tick.direction-keys))
     )
   (post
-    (make-global-transform     (game.transform)            (system.transform))
+    (make-global-transform     (game.transform)            (io.transform))
     )
   (exit)
   )
@@ -234,7 +234,7 @@
 
     ;; We need to reset the keys due to sticky keys,
     ;; if we didn't, we'd return to this function again.
-    (get-keys   (system.window) (game.keys))
+    (get-keys   (io.window) (game.keys))
     (set-false  game.keys.escape)
 
     ;; Finally, indicate that we no longer want to loop here,

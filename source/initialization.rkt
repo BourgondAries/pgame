@@ -43,8 +43,8 @@
 (define (initialize state)
   (H~>
     (hash)
-    (initialize-glfw    () (system.window))
-    (add-sprites*       () (system.animation.madotsuki))
+    (initialize-glfw    () (io.window))
+    (add-sprites*       () (io.animation.madotsuki))
     ((const '())        game.fsm)
     ;((push-fsm 'core*)  game.fsm)
     ((push-fsm 'core*)  game.fsm)

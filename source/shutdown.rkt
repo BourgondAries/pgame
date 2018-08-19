@@ -19,5 +19,5 @@
 (define (cleanup state)
   (H~>
     state
-    (glfwDestroyWindow system.window)
+    (glfwDestroyWindow io.window)
     ))
