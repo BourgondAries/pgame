@@ -256,19 +256,24 @@
    (draw-texture-fullscreen tex)
    ))
 
+(define (animate source bottom-left top-right horiz vertic tick every)
+  (define-values (x y) (ticker (quotient tick every) horiz vertic))
+  ((animate-texture source bottom-left top-right horiz vertic) x y))
+
+;; Give the rectangle and the amount of panes, assumes the file is a texture atlas
+;; Returns a function that takes x and y as in which pane to draw
 (define/memoize (animate-texture source bottom-left top-right horizontal-panes vertical-panes)
-  (let ([runs
-    (flatten
-      (for/list ([i horizontal-panes])
-        (for/list ([j vertical-panes])
-          (lambda ()
-            (draw-texture/uv source bottom-left top-right (list (/ i horizontal-panes)
-                                                                (/ j vertical-panes))
-                                                          (list (/ (add1 i) horizontal-panes)
-                                                                (/ (add1 j) vertical-panes)))))))])
-    (lambda (i j)
-        ((list-ref runs (+ (modulo j vertical-panes) (* vertical-panes (modulo i horizontal-panes))))))
-      ))
+  (define runs (flatten
+                 (for/list ([i horizontal-panes])
+                   (for/list ([j vertical-panes])
+                     (lambda ()
+                       (draw-texture/uv source bottom-left top-right (list (/ i horizontal-panes)
+                                                                           (/ j vertical-panes))
+                                                                     (list (/ (add1 i) horizontal-panes)
+                                                                           (/ (add1 j) vertical-panes))))))))
+  (lambda (i j)
+      ((list-ref runs (+ (modulo j vertical-panes) (* vertical-panes (modulo i horizontal-panes)))))))
+
 ;; TODO the functions above
 
 ;; Assumes the texture is a rectangle that fills the entire rectangle
@@ -336,7 +341,6 @@
               (animation i j))
             (values nl (add1 x))
              ))))))
-
 
 (define/memoize-partial draw-texture/uv (file bottom-left    top-right
                                               bottom-left-uv top-right-uv) ()

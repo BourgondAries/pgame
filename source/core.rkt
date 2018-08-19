@@ -33,16 +33,41 @@
       ([should-exit? state]  (break state cleanup))
       (else                  ((meval (first (nested-hash-ref state 'game 'fsm))) state)))))
 
+(define (draw-coin tick)
+  (animate "data/coin48.png" '(0.1 0.1) '(0.2 0.2) 61 1 tick 5))
+
+(define (perspective width height)
+  (when (and width height)
+    (glViewport 0 0 width height))
+  (if (and width height)
+    (matrix [[(/ height width) 0 0 0]
+             [0                1 0 0]
+             [0                0 1 0]
+             [0                0 0 1]])
+  (identity-matrix 4)))
+
+(define (sub state)
+  (parameterize ([*view* (matrix* (perspective (nested-hash-ref state 'system 'window-size 'width)
+                                               (nested-hash-ref state 'system 'window-size 'height))
+                                               (*view*))])
+    (trce (*view*))
+    (H~>
+      state
+      (render-absolute  ())
+      (draw             (system.transform game.tick.direction-keys system.last-direction system.animation.madotsuki))
+      (draw-relative    (system.transform system.render.relative))
+      (drawtext               (game.tick.direction-keys))
+      (draw-coin (game.tick.iteration)))))
+
 (define (core* state)
   (H~> state
+    (glfwGetWindowSize (system.window) (system.window-size.width system.window-size.height))
+    (trce (system.window-size))
     (clear-graphics   ())
     ((if* add1)       (game.any-direction-keys?
                        game.tick.direction-keys)
                       (game.tick.direction-keys))
-    (render-absolute  ())
-    (draw             (system.transform game.tick.direction-keys system.last-direction system.animation.madotsuki))
-    (draw-relative    (system.transform system.render.relative))
-    (drawtext               (game.tick.direction-keys))
+    (sub *)
     (glfwSwapBuffers        (system.window))
     (get-keys               (system.window) (game.keys))
     (glfwWindowShouldClose  (system.window) (game.should-exit?))
