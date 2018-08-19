@@ -12,20 +12,20 @@
 ;; This is a scene. Very simple, H~>-oriented
 (state top-map
   (enter
-    ((const -100)  game.transform.y)
-    ((const  120)  game.tick.to-zero)
+    ((const -100)  ae.transform.y)
+    ((const  120)  ae.tick.to-zero)
     (do-fade       (io.window io.window-size.width io.window-size.height))
     )
   (pre
     (clear-graphics   ())
     (render-absolute  ())
-    (draw             (io.transform game.tick.direction-keys game.last-direction io.animation.madotsuki))
+    (draw             (io.transform ae.tick.direction-keys ae.last-direction io.animation.madotsuki))
     (draw-relative    (io.transform io.render.relative))
-    (fade/invert            (game.tick.to-zero))
-    ; (trce game.tick.to-zero)
+    (fade/invert            (ae.tick.to-zero))
+    ; (trce ae.tick.to-zero)
     (glfwSwapBuffers        (io.window))
-    (get-keys               (io.window) (game.keys))
-    (glfwWindowShouldClose  (io.window) (game.should-exit?))
+    (get-keys               (io.window) (ae.keys))
+    (glfwWindowShouldClose  (io.window) (ae.should-exit?))
     )
   (pure
     (collect-wasd           (keys) (keys.wasd))
@@ -42,7 +42,7 @@
                       (tick.direction-keys))
     )
   (post
-    (make-global-transform     (game.transform)            (io.transform))
+    (make-global-transform     (ae.transform)            (io.transform))
     )
   (exit)
   )

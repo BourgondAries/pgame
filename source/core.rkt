@@ -34,4 +34,4 @@
       ([break-seen?]         (break state cleanup))
       ([empty? state]        (initializing state))
       ([should-exit? state]  (break state cleanup))
-      (else                  ((meval (first (nested-hash-ref state 'game 'fsm))) state)))))
+      (else                  ((meval (first (nested-hash-ref state 'ae 'fsm))) state)))))

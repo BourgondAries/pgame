@@ -24,16 +24,16 @@
    #:with name-core (format-id #'name "~a-core" #'name)
    #'(begin
        (define (name state)
-         (trce^ name)
+         (trce^ `(entering name))
          (H~>
            state
            enter-body ...
-           ((set-fsm 'name-core) game.fsm)))
+           ((set-fsm 'name-core) ae.fsm)))
        (define (name-core state)
          (H~>
            state
            pre-body ...
-           ((lambda (game)
-            (H~> game pure-body ...)) game)
+           (H~> ae
+                pure-body ...)
            post-body ...
            )))))

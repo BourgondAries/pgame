@@ -14,18 +14,17 @@
 (state menu
   (enter
     (show-visualization)  ; Blocks by using a subprogram
-
     ;; We need to reset the keys due to sticky keys,
     ;; if we didn't, we'd return to this function again.
-    (get-keys   (io.window) (game.keys))
-    (set-false  game.keys.escape)
-
-    ;; Finally, indicate that we no longer want to loop here,
-    ;; return from whence we came.
-    (pop-fsm    game.fsm)
+    (get-keys   (io.window) (ae.keys))
+    (set-false  ae.keys.escape)
     )
   (pre)
-  (pure)
+  (pure
+    ;; Finally, indicate that we no longer want to loop here,
+    ;; return from whence we came.
+    (pop-fsm    fsm)
+    )
   (post)
   (exit)
   )

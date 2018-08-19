@@ -163,14 +163,14 @@
     ))
 
 (define (sub state)
-  (parameterize ([*view* (matrix* (rotate (nested-hash-ref state 'game 'rotation)) (perspective (nested-hash-ref state 'io 'window-size 'width #:default #f)
+  (parameterize ([*view* (matrix* (rotate (nested-hash-ref state 'ae 'rotation)) (perspective (nested-hash-ref state 'io 'window-size 'width #:default #f)
                                                                                                 (nested-hash-ref state 'io 'window-size 'height #:default #f))
                                                (*view*))])
     (H~>
       state
       (render-absolute   ())
-      (draw              (io.transform game.tick.direction-keys io.last-direction io.animation.madotsuki))
+      (draw              (io.transform ae.tick.direction-keys io.last-direction io.animation.madotsuki))
       (draw-relative     (io.transform io.render.relative))
-      (drawtext          (game.tick.direction-keys))
-      (draw-coin         (game.tick.iteration)))))
+      (drawtext          (ae.tick.direction-keys))
+      (draw-coin         (ae.tick.iteration)))))
 

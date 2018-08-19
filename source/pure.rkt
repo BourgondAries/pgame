@@ -104,7 +104,7 @@
 (define (add1* n) (if n (add1 n) 0))
 
 (define (should-exit? state)
-  (nested-hash-ref state 'game 'should-exit?))
+  (nested-hash-ref state 'ae 'should-exit?))
 
 (define (add1-if-true condition value)
   (if condition
