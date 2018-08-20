@@ -13,7 +13,8 @@
 
 (require racket/list
          nested-hash spipe
-         syntax/parse/define (for-syntax racket/base))
+         syntax/parse/define racket/function (for-syntax racket/base))
+
 (define-syntax-parser expand-single
   ([_ value:expr fn:id]
    #'(fn value))
@@ -24,7 +25,9 @@
    #'(let ([result value])
        (expand-single result operand) ...)))
 
-(define (set-false x) #f)
+(define-syntax-parser set-false
+  ([_ value:expr ...+]
+   #'(values ((const #f) value) ...)))
 
 (define (pop-fsm fsm)
   (if (empty? fsm)
@@ -62,7 +65,6 @@
     (add1-if-true (keys.d transform.x) (transform.x))
     (sub1-if-true (keys.q rotation) (rotation))
     (add1-if-true (keys.e rotation) (rotation))
-    (and (keys.d keys.b keys.g keys.escape) (dbg-esc?))
     ((if* (push-fsm 'menu)) (keys.escape fsm) (fsm))
   ))
 

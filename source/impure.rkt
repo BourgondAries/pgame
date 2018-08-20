@@ -171,7 +171,8 @@
     (H~>
       state
       (render-absolute   ())
-      (draw              (io.transform ae.tick.direction-keys ae.last-direction io.animation.madotsuki))
-      (draw-relative     (io.transform io.render.relative))
+      (context io.transform
+        (draw              (ae.tick.direction-keys ae.last-direction io.animation.madotsuki) ())
+        (draw-relative     (io.render.relative)                                              ()))
       (drawtext          (ae.tick.direction-keys))
       (draw-coin         (ae.tick.iteration)))))
