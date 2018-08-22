@@ -11,6 +11,7 @@
 (require "states/core.rkt" "states/experimental.rkt" "states/menu.rkt" "states/top-map.rkt")
 (require "visualizer.rkt" (for-syntax racket/base racket/syntax))
 (require "state.rkt" "states/initializing.rkt")
+(require "states/decode-tmx.rkt")
 
 (define-namespace-anchor anchor)
 (define ns (namespace-anchor->namespace anchor))

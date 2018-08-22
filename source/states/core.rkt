@@ -13,7 +13,7 @@
   (enter
     )
   (pre
-    (context io.window
+    (context (io.window)
       (get-keys                 ()      (ae.keys))
       (glfwWindowShouldClose    ()      (ae.should-exit?)))
   )
@@ -32,6 +32,7 @@
     (sub1-if-true                (keys.q)   rotation)
     (add1-if-true                (keys.e)   rotation)
     ((if* (push-fsm 'menu))      (keys.escape) fsm)
+    ((if* (push-fsm 'decode-tmx))      (keys.g) fsm)
     (check-door-collision        (transform.x transform.y)  (collides?))
     ((if* (push-fsm 'top-map))   (collides? fsm)            (fsm))
     (any-direction-keys?         (keys)                     (any-direction-keys?))

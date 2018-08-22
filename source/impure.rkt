@@ -152,8 +152,10 @@
 (define/memoize (draw-texture/uv* lst)
   (apply draw-texture/uv lst))
 
+; (define (dextra xform 
+
 (define (draw-coin tick)
-  (animate "data/coin48.png" '(0.1 0.1) '(0.2 0.2) 61 1 tick 5))
+  (animate "data/coin24.png" '(0.1 0.1) '(0.2 0.2) 61 1 tick 2))
 
 (define ((every tick-modulus action) tick value)
   (if (zero? (modulo tick tick-modulus))
@@ -171,7 +173,7 @@
     (H~>
       state
       (render-absolute   ())
-      (context io.transform
+      (context (io.transform)
         (draw              (ae.tick.direction-keys ae.last-direction io.animation.madotsuki) ())
         (draw-relative     (io.render.relative)                                              ()))
       (drawtext          (ae.tick.direction-keys))
