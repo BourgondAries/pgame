@@ -14,7 +14,7 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
-         "breakpoint.rkt" "drawing.rkt" "impure.rkt" "initialization.rkt" "pure.rkt")
+         "breakpoint.rkt" "drawing.rkt" "impure.rkt" "pure.rkt")
 
 (define (cleanup state)
   (H~>

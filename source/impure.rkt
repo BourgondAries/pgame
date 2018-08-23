@@ -17,7 +17,7 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
-         "breakpoint.rkt" "drawing.rkt" "initialization.rkt" "pure.rkt")
+         "breakpoint.rkt" "drawing.rkt" "pure.rkt")
 
 (define-syntax-parser push-view
   ([_ view:expr body:expr ...+]
@@ -69,7 +69,7 @@
   (push-view persp
     ; (trce tick)
     (define-values (x y) (ticker (quotient tick 60) 8 15))
-    (trce (quotient tick 60))
+    ; (trce (quotient tick 60))
     ((animate-texture "data/basictiles.png" '(-1 -1) '(-0.5 -0.5) 8 15)
      x y)
     (draw-tiles "data/basictiles.png" 8 15 grass (scale 5/100) 0)

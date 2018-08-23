@@ -7,7 +7,7 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
-         "breakpoint.rkt" "drawing.rkt" "impure.rkt" "initialization.rkt" "pure.rkt" "shutdown.rkt")
+         "breakpoint.rkt" "drawing.rkt" "impure.rkt" "pure.rkt" "shutdown.rkt")
 (require "states/core.rkt" "states/experimental.rkt" "states/menu.rkt" "states/top-map.rkt")
 (require "visualizer.rkt" (for-syntax racket/base racket/syntax))
 (require "state.rkt" "states/initializing.rkt")

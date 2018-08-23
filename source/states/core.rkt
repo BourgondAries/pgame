@@ -5,7 +5,7 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
-         "../breakpoint.rkt" "../drawing.rkt" "../impure.rkt" "../initialization.rkt" "../pure.rkt" "../shutdown.rkt" "../state.rkt")
+         "../breakpoint.rkt" "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt" "../state.rkt")
 
 (provide (all-defined-out))
 
@@ -15,7 +15,8 @@
   (pre
     (context (io.window)
       (get-keys                 ()      (ae.keys))
-      (glfwWindowShouldClose    ()      (ae.should-exit?)))
+      (glfwWindowShouldClose    ()      (ae.should-exit?))
+      )
   )
   (pure
     (collect-wasd           (keys)                       (keys.wasd))
@@ -30,12 +31,12 @@
     (sub1-if-true           (keys.s)   transform.y)
     (add1-if-true                (keys.d)   transform.x)
     (sub1-if-true                (keys.q)   rotation)
-    (add1-if-true                (keys.e)   rotation)
-    ((if* (push-fsm 'menu))      (keys.escape) fsm)
+    (add1-if-true                      (keys.e)   rotation)
+    ((if* (push-fsm 'menu))            (keys.escape) fsm)
     ((if* (push-fsm 'decode-tmx))      (keys.g) fsm)
-    (check-door-collision        (transform.x transform.y)  (collides?))
-    ((if* (push-fsm 'top-map))   (collides? fsm)            (fsm))
-    (any-direction-keys?         (keys)                     (any-direction-keys?))
+    (check-door-collision              (transform.x transform.y)  (collides?))
+    ((if* (push-fsm 'top-map))         (collides? fsm)            (fsm))
+    (any-direction-keys?               (keys)                     (any-direction-keys?))
     )
   (post
     (make-global-transform    (ae.transform)   (io.transform))
