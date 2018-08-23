@@ -25,8 +25,10 @@
       (draw-relative     (io.render.relative))
       )
     (fade/invert            (ae.tick.to-zero))
-    (glfwSwapBuffers        (io.window))
-    (get-keys               (io.window) (ae.keys))
+    (context (io.window)
+      (glfwSwapBuffers        ())
+      (get-keys               () (ae.keys))
+      )
     )
   (pure
     (collect-wasd           (keys) (keys.wasd))
@@ -35,9 +37,7 @@
     (pure *)
     (add1 tick.iteration)
     (any-direction-keys?       (keys)                 (any-direction-keys?))
-    ((if* add1)       (any-direction-keys?
-                       tick.direction-keys)
-                      (tick.direction-keys))
+    ((if* add1)       (any-direction-keys?) tick.direction-keys)
     )
   (post
     (make-global-transform     (ae.transform)            (io.transform))
