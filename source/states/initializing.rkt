@@ -23,12 +23,6 @@
   (pre) (pure ((set-fsm 'core*)  fsm)) (post) (exit)
   )
 
-(require racket/list syntax/parse/define
-         (for-syntax racket/base racket/list racket/string
-                     threading)
-         ffi/vector finalizer math/matrix opengl opengl/util threading
-         glfw3 logger memo nested-hash spipe)
-
 (define (initialize-glfw)
   (when (= (glfwInit) GLFW_FALSE)
     (ftal^ "glfwInit returned non-success code")

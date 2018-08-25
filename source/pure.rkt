@@ -72,6 +72,10 @@
   ([_ (name:id val:expr) ...+]
    #'(begin (define name val) ...)))
 
+(define (process-triggers hitbix triggers)
+  (void)
+  )
+
 ;; rect: #s(lx by rx ty)
 (define (collides? rect-1 rect-2)
   (define (collides?* rect-1 rect-2)
@@ -99,12 +103,31 @@
     (proc value)
     value))
 
+;; Indicates whether we're walking or not
 (define (any-direction-keys? keys)
   (or
     (hash-ref keys 'w #f)
     (hash-ref keys 'a #f)
     (hash-ref keys 's #f)
     (hash-ref keys 'd #f)))
+
+;; Actually moves the character based on WASD keys
+(define (count-walking keys x y)
+  (values
+    (cond
+      ([hash-ref keys 'a #f]  (sub1 x))
+      ([hash-ref keys 'd #f]  (add1 x))
+      (else                   x))
+    (cond
+      ([hash-ref keys 'w #f]  (add1 y))
+      ([hash-ref keys 's #f]  (sub1 y))
+      (else                   y))
+    ))
+
+(define (compute-walk-tick keys tick)
+  (if (any-direction-keys? keys)
+    (add1 tick)
+    0))
 
 (define (last-key last-direction wasd)
   (if wasd

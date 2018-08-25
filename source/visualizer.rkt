@@ -47,7 +47,7 @@
 
 (define (generate-dot-code graph)
   (define-values (graph* _) (visualize 0 'root graph 0))
-  (string-append "digraph G {\n\tnode [shape=oval];\n" (compute-labels graph*) (annotated-graph->dot graph*) "}"))
+  (string-append "digraph G {\n\tranksep=2;\n\tnode [shape=oval];\n" (compute-labels graph*) (annotated-graph->dot graph*) "}"))
 
 (define (annotated-graph->dot agra)
   (define (root-node? agra)

@@ -16,8 +16,7 @@
     (show-visualization)  ; Blocks by using a subprogram
     ;; We need to reset the keys due to sticky keys,
     ;; if we didn't, we'd return to this function again.
-    (get-keys   (io.window) (ae.keys))
-    (set-false  ae.keys.escape)
+    (clear-keys (io.window) ae.keys)
     )
   (pre)
   (pure

@@ -23,11 +23,11 @@
     (t ())
    )
   (pre
-   trce
+    (clear-keys (io.window) ae.keys)
    )
   (pure
     (pop-fsm fsm)
-    (pop-fsm fsm))
+    )
   (post)
   (exit))
 

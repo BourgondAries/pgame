@@ -43,13 +43,13 @@
 
 ;; Turning the view into a f32vector is remarkably slow
 ;; this speeds it up by 2 orders of magnitude
-(define/memoize (view->f32vector view)
+(define/memoize (matrix->f32vector view)
   (list->f32vector
     (map real->single-flonum
       (matrix->list view))))
 
 (define (get-view)
-  (view->f32vector (*view*)))
+  (matrix->f32vector (*view*)))
 
 (define/memoize-partial fade () (alpha)
   ((define vertexarray   (u32vector-ref   (glGenVertexArrays 1) 0))
@@ -258,6 +258,23 @@
   (define-values (x y) (ticker (quotient tick every) horiz vertic))
   ((animate-texture source bottom-left top-right horiz vertic) x y))
 
+(define (animate/xform transformation source bottom-left top-right horiz vertic tick every)
+  (define-values (x y) (ticker (quotient tick every) horiz vertic))
+  ((animate-texture source bottom-left top-right horiz vertic) x y))
+
+(define/memoize (animate-texture/xform source bottom-left top-right horizontal-panes vertical-panes)
+  (define runs (flatten
+                 (for/list ([i horizontal-panes])
+                   (for/list ([j vertical-panes])
+                     (lambda ()
+                       (draw-texture/uv source bottom-left top-right (list (/ i horizontal-panes)
+                                                                           (/ j vertical-panes))
+                                                                     (list (/ (add1 i) horizontal-panes)
+                                                                           (/ (add1 j) vertical-panes))))))))
+  (lambda (i j)
+      ((list-ref runs (+ (modulo j vertical-panes) (* vertical-panes (modulo i horizontal-panes)))))))
+
+
 ;; Give the rectangle and the amount of panes, assumes the file is a texture atlas
 ;; Returns a function that takes x and y as in which pane to draw
 (define/memoize (animate-texture source bottom-left top-right horizontal-panes vertical-panes)
@@ -273,6 +290,60 @@
       ((list-ref runs (+ (modulo j vertical-panes) (* vertical-panes (modulo i horizontal-panes)))))))
 
 ;; TODO the functions above
+
+(define (wh->f32vector w h)
+  (define w/2 (/ w 2))
+  (define h/2 (/ h 2))
+  (rectangle->f32vector (list (- w/2) (- h/2)) (list w/2 h/2)))
+
+(define/memoize-partial #:inverted draw-texture-2 (fwh) (view)
+  (
+   (define file   (first fwh))
+   (define width  (second fwh))
+   (define height (third fwh))
+   (define tex            (load-texture* file))
+   (define vertexarray    (u32vector-ref (glGenVertexArrays 1) 0))
+   (define vertexbuffer   (u32vector-ref (glGenBuffers 1) 0))
+   (define program-id     (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
+                                           (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
+   (define move-loc       (glGetUniformLocation program-id "movement"))
+   (define vertex-loc     (glGetAttribLocation program-id "vertex"))
+   (define uv-loc         (glGetAttribLocation program-id "vertex_uv"))
+   (define tex-loc              (glGetUniformLocation program-id "texture"))
+   (define points*              (wh->f32vector width height))
+   (define dim-vertex           2)
+   (define dim-uv               2)
+   (register-finalizer          tex (lambda (x) (glDeleteTextures 1 (u32vector x))))
+   (register-finalizer          vertexarray (lambda (x) (glDeleteVertexArrays 1 (u32vector x))))
+   (glBindVertexArray           vertexarray)
+   (glBindBuffer                GL_ARRAY_BUFFER vertexbuffer)
+   (glBufferData                GL_ARRAY_BUFFER
+                                (* (f32vector-length points*) size-gl-float)
+                                (f32vector->cpointer points*)
+                                GL_STATIC_DRAW)
+   (glBindTexture               GL_TEXTURE_2D tex)
+   (glTexParameteri             GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_BORDER)
+   (glTexParameteri             GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_BORDER)
+   (glTexParameteri             GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
+   (glTexParameteri             GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
+   (glGenerateMipmap            GL_TEXTURE_2D)
+   (glEnableVertexAttribArray   vertex-loc)
+   (glEnableVertexAttribArray   uv-loc)
+   (glVertexAttribPointer       vertex-loc dim-vertex GL_FLOAT #f 16 #f)
+   (glVertexAttribPointer       uv-loc dim-uv GL_FLOAT #f 16 8)
+   (glBindVertexArray           0)
+   (glDeleteBuffers             1 (u32vector vertexbuffer))
+   )
+   ((glUseProgram (create-program* (load-shader* "source/shaders/draw-texture.vertex.glsl"   GL_VERTEX_SHADER)
+                                   (load-shader* "source/shaders/draw-texture.fragment.glsl" GL_FRAGMENT_SHADER)))
+    (glBindVertexArray    vertexarray)
+    (glActiveTexture      GL_TEXTURE0)
+    (glUniform1i          tex-loc #|GL_TEXTURE|# 0)
+    (glBindTexture        GL_TEXTURE_2D tex)
+    (glUniformMatrix4fv   move-loc 1 #f (matrix->f32vector view))
+    (glDrawArrays         GL_TRIANGLES 0 6)
+    (glBindVertexArray    0)
+    ))
 
 ;; Assumes the texture is a rectangle that fills the entire rectangle
 (define/memoize-partial draw-texture (file bottom-left top-right) ()

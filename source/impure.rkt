@@ -86,6 +86,13 @@
   ((draw-text "data/text/main-text2.png" '(-1 0.0) '(-0.9 0.2) 19 5)
    "Nani the fuck\nis going on?"))
 
+(define (drawtext2 view tick)
+  (parameterize ([*view* (matrix* view (*view*))])
+    ((animate-texture "data/text.png" '(-0.5 -0.5) '(0 0) 14 3) (floor (/ tick 12))
+                                                                (- 2 (floor (/ tick (* 12 14)))))
+    ((draw-text "data/text/main-text2.png" '(-1 0.0) '(-0.9 0.2) 19 5)
+     "Nani the fuck\nis going on? (2)")))
+
 (define (render-absolute)
   (draw-texture "data/simple-house.png" '(-0.3 0.3) '(0.3 1.4)))
 
@@ -108,8 +115,16 @@
            (hash)
            (hash-set 'key (not (zero? (glfwGetKey window key*)))) ...)
      )))
-
   ((map-glfw-keys left-control right-control escape q e w a s d g b up down left right) window))
+
+(define (clear-keys window table)
+  (get-keys window)
+  (glfwPollEvents)
+  (for/fold ([table* table])
+            ([(x y) table])
+    (trce x y)
+    (hash-set table* x #f)
+  ))
 
 (define (make-global-transform trn)
   ; (dbug trn)
@@ -157,6 +172,9 @@
 (define (draw-coin tick)
   (animate "data/coin24.png" '(0.1 0.1) '(0.2 0.2) 61 1 tick 2))
 
+(define (draw-portal tick)
+  (animate "data/portalRings1.png" '(0.2 0.1) '(0.3 0.2) 4 5 tick 2))
+
 (define ((every tick-modulus action) tick value)
   (if (zero? (modulo tick tick-modulus))
     (begin (action value) value)
@@ -177,4 +195,16 @@
         (draw              (ae.tick.direction-keys ae.last-direction io.animation.madotsuki) ())
         (draw-relative     (io.render.relative)                                              ()))
       (drawtext          (ae.tick.direction-keys))
-      (draw-coin         (ae.tick.iteration)))))
+      (draw-coin         (ae.tick.iteration))
+      (draw-portal       (ae.tick.iteration)))))
+
+#|
+Every drawable thing requires: VIEW
+Every ANIMATED drawable thing requires TICK & DIVISOR
+Static: VIEW              (TEXTURE width height)
+DumbAn: VIEW TICK MODULUS (TEXTURE width height vertical horizontal)
+SmarAn: VIEW X    Y       (TEXTURE width height vertical horizontal)
+Tilest: VIEW              (TEXTURE width height vertical horizontal ((3 9 4 5) (1 9 4 2)))
+sttext: VIEW              (TEXTURE width height string)
+dytext: VIEW TICK         (TEXTURE width height string)
+|#
