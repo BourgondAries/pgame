@@ -58,6 +58,17 @@
              [0                0 0 1]])
   (identity-matrix 4)))
 
+(define (update-perspective tick width height perspective)
+  (if (modulo tick 60)
+    (begin
+      (glViewport 0 0 width height)
+      (matrix [[(/ height width) 0 0 0]
+               [0                1 0 0]
+               [0                0 1 0]
+               [0                0 0 1]]))
+    perspective))
+
+
 (define (rotate r)
   (matrix [[(cos r) (- (sin r)) 0 0]
            [(sin r) (cos r)     0 0]

@@ -18,13 +18,16 @@
     )
   (pre
     (context (io.window)
+      (get-window-size          ()      (io.window-size.width io.window-size.height))
       (get-keys                 ()      (ae.keys))
       (glfwWindowShouldClose    ()      (ae.should-exit?))
       )
+    (update-perspective (ae.tick.iteration
+                         io.window-size.width
+                         io.window-size.height) io.perspective)
   )
   (pure
     (collect-wasd           (keys)                       (keys.wasd))
-    (trce keys.wasd)
     (last-key               (last-direction keys.wasd)   (last-direction))
     (add1                   tick.iteration)
     (compute-walk-tick      (keys)   tick.direction-keys)
@@ -42,7 +45,6 @@
     )
   (post
     (make-global-transform    (ae.transform)   (io.transform))
-    (get-window-size          (io.window)      (io.window-size.width io.window-size.height))
     (clear-graphics           ())
     (render-absolute   ())
     (context (io.transform)
@@ -50,8 +52,8 @@
 
       (draw-relative     (io.render.relative)                                              ())
       )
-    (draw-texture-2 (io.neutral ae.tmp))
-    (drawtext2      (io.neutral ae.tick.iteration))
+    (draw-texture-2 (io.perspective ae.tmp))
+    (drawtext2      (io.perspective ae.tick.iteration))
     ; (drawtext     (ae.tick.direction-keys))
     (draw-coin         (ae.tick.iteration))
     (draw-portal       (ae.tick.iteration))
