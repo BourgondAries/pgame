@@ -137,6 +137,33 @@
     (hash-set table* x #f)
   ))
 
+(define-syntax-parser where
+  ([_ body:expr ...+ #:given (variable:id value:expr) ...]
+   #'(let ([variable value] ...) body ...)))
+
+
+(define (make-global-transform* trn)
+  ; (dbug trn)
+  (if trn
+    (where
+      (matrix*
+        (matrix [[1 0 0 0]
+                 [0 1 0 0]
+                 [0 0 1 0]
+                 [(/ x 20) (/ y 20) 0 1]])
+        ;; rotation here
+        (rotate (/ r 10))
+        (matrix [[0.1 0 0 0]
+                 [0 0.1 0 0]
+                 [0 0 0.1 0]
+                 [0 0 0   1]])
+        )
+      #:given
+        [x (hash-ref trn 'x 0)]
+        [y (hash-ref trn 'y 0)]
+        [r (hash-ref trn 'r 0)])
+    (identity-matrix 4)))
+
 (define (make-global-transform trn)
   ; (dbug trn)
   (if trn
@@ -150,6 +177,7 @@
                  [0 0 1 0]
                  [(/ x 20) (/ y 20) 0 1]])
         ;; rotation here
+        (rotate (/ r 10))
         (matrix [[0.1 0 0 0]
                  [0 0.1 0 0]
                  [0 0 0.1 0]

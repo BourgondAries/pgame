@@ -13,6 +13,7 @@
 
 (require racket/list
          nested-hash spipe
+         logger
          syntax/parse/define racket/function (for-syntax racket/base))
 
 (define-syntax-parser expand-single
@@ -76,6 +77,11 @@
   (void)
   )
 
+(define (check-collision position collidables)
+  ; (trce position)
+  0
+  )
+
 ;; rect: #s(lx by rx ty)
 (define (collides? rect-1 rect-2)
   (define (collides?* rect-1 rect-2)
@@ -112,6 +118,7 @@
     (hash-ref keys 'd #f)))
 
 ;; Actually moves the character based on WASD keys
+;; To what extent should functions like this assume tables?
 (define (count-walking keys x y)
   (values
     (cond

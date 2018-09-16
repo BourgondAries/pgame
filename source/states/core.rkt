@@ -5,9 +5,13 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
-         "../breakpoint.rkt" "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt" "../state.rkt")
+         "../state.rkt"
+         "../breakpoint.rkt" "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt")
 
 (provide (all-defined-out))
+
+(define (mat* x y)
+  (matrix* x y))
 
 (state core*
   (enter
@@ -27,24 +31,28 @@
                          io.window-size.height) io.perspective)
   )
   (pure
+    (add1                   tick.iteration)
+    (check-C-W-exit         (keys.left-control keys.w)   (should-exit?))
     (collect-wasd           (keys)                       (keys.wasd))
     (last-key               (last-direction keys.wasd)   (last-direction))
-    (add1                   tick.iteration)
-    (compute-walk-tick      (keys)   tick.direction-keys)
-    (check-C-W-exit         (keys.left-control keys.w)   (should-exit?))
+    (compute-walk-tick      (keys)                       tick.direction-keys)
     (add1-if-true           (keys.q)   transform.r)
     (sub1-if-true           (keys.e)   transform.r)
     (count-walking          (keys) transform.x transform.y)
-    (sub1-if-true                (keys.q)   rotation)
-    (add1-if-true                      (keys.e)   rotation)
     ((if* (push-fsm 'menu))            (keys.escape) fsm)
     ((if* (push-fsm 'decode-tmx))      (keys.g) fsm)
     (check-door-collision              (transform.x transform.y)  (collides?))
+    (check-collision                   (transform collidables) (action))
     ((if* (push-fsm 'top-map))         (collides?)            fsm)
     ; (any-direction-keys?               (keys)                 (any-direction-keys?))
     )
   (post
-    (make-global-transform    (ae.transform)   (io.transform))
+    (make-global-transform*    (ae.transform)   (io.transform))
+    ; (erro io.transform)
+    ; (erro io.perspective)
+    ; (erro io.view)
+    (mat* (io.transform io.perspective) (io.view))
+    ; (erro io.view)
     (clear-graphics           ())
     (render-absolute   ())
     (context (io.transform)
@@ -52,12 +60,10 @@
 
       (draw-relative     (io.render.relative)                                              ())
       )
-    (draw-texture-2 (io.perspective ae.tmp))
-    (drawtext2      (io.perspective ae.tick.iteration))
-    ; (drawtext     (ae.tick.direction-keys))
+    (draw-texture-2    (io.perspective ae.tmp))
+    (drawtext2         (io.perspective ae.tick.iteration))
     (draw-coin         (ae.tick.iteration))
     (draw-portal       (ae.tick.iteration))
     (glfwSwapBuffers   (io.window))
     )
   (exit))
-
