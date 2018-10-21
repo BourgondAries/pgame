@@ -7,8 +7,9 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
+         "../../genalg/main.rkt"
          "breakpoint.rkt" "drawing.rkt" "impure.rkt" "pure.rkt" "shutdown.rkt")
-(require "states/core.rkt" "states/experimental.rkt" "states/menu.rkt" "states/top-map.rkt")
+(require "states/core.rkt" "states/experimental.rkt" "states/menu.rkt" "states/top-map.rkt" "states/genalg.rkt")
 (require "visualizer.rkt" (for-syntax racket/base racket/syntax))
 (require "state.rkt" "states/initializing.rkt")
 (require "states/decode-tmx.rkt")
@@ -31,8 +32,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (core state)
   (with-handlers* ([exn:break? (lambda (_) (break state cleanup))])
-    (cond
-      ([break-seen?]         (break state cleanup))
-      ([empty? state]        (initializing state))
-      ([should-exit? state]  (break state cleanup))
-      (else                  ((meval (first (nested-hash-ref state 'ae 'fsm))) state)))))
+    (trce state)
+    ((loop~> io main) (initializing))))

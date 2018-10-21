@@ -26,6 +26,7 @@
        (require requires ...)
        (define (name state)
          (trce^ `(entering name))
+         (trce^ name)
          (H~>
            state
            enter-body ...

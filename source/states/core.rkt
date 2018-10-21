@@ -5,7 +5,7 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
-         "../state.rkt"
+         "../../../genalg/main.rkt" "../state.rkt"
          "../breakpoint.rkt" "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt")
 
 (provide (all-defined-out))
@@ -13,14 +13,19 @@
 (define (mat* x y)
   (matrix* x y))
 
-(state core*
-  (enter
+(define (core* s)
+  (H~>
+    s
     ((const (identity-matrix 4)) io.neutral)
     ((const '("data/basictiles.png" 1 1)) ae.tmp)
     ((const 0) ae.transform.x)
     ((const 0) ae.transform.y)
-    )
-  (pre
+    ((const (list core*-pre core*-pure core*-post)) io.core*)
+    ((loop~> io core*))
+    ))
+(define (core*-pre s)
+  (H~>
+    s
     (context (io.window)
       (get-window-size          ()      (io.window-size.width io.window-size.height))
       (get-keys                 ()      (ae.keys))
@@ -29,8 +34,12 @@
     (update-perspective (ae.tick.iteration
                          io.window-size.width
                          io.window-size.height) io.perspective)
-  )
-  (pure
+  ))
+
+(define (core*-pure s)
+  (H~>
+    s
+    (H~> ae
     (add1                   tick.iteration)
     (check-C-W-exit         (keys.left-control keys.w)   (should-exit?))
     (collect-wasd           (keys)                       (keys.wasd))
@@ -45,8 +54,11 @@
     (check-collision                   (transform collidables) (action))
     ((if* (push-fsm 'top-map))         (collides?)            fsm)
     ; (any-direction-keys?               (keys)                 (any-direction-keys?))
-    )
-  (post
+    )))
+
+(define (core*-post s)
+  (H~>
+    s
     (make-global-transform*    (ae.transform)   (io.transform))
     ; (erro io.transform)
     ; (erro io.perspective)
@@ -66,4 +78,4 @@
     (draw-portal       (ae.tick.iteration))
     (glfwSwapBuffers   (io.window))
     )
-  (exit))
+  )
