@@ -167,3 +167,6 @@
 
 (define (check-C-W-exit left-control w)
   (and left-control w))
+
+(define (exit-c ? lst)
+  (if ? '() lst))

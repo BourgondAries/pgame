@@ -12,7 +12,6 @@
 (require "states/core.rkt" "states/experimental.rkt" "states/menu.rkt" "states/top-map.rkt" "states/genalg.rkt")
 (require "visualizer.rkt" (for-syntax racket/base racket/syntax))
 (require "state.rkt" "states/initializing.rkt")
-(require "states/decode-tmx.rkt")
 
 (define-namespace-anchor anchor)
 (define ns (namespace-anchor->namespace anchor))
@@ -31,6 +30,14 @@
 ;; as a symbol and eval'd to get the actual function.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (core state)
-  (with-handlers* ([exn:break? (lambda (_) (break state cleanup))])
-    (trce state)
-    ((loop~> io main) (initializing))))
+  (H~>
+    (initializing)
+    ((const (list core2)) io.main)
+    ((loop~> io main))
+    ))
+
+(define (core2 s)
+  (H~>
+    s
+    (add1 ae.tick.iteration)
+    ((top~> io core))))

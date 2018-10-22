@@ -12,15 +12,25 @@
 
 
 ;; This is a scene. Very simple, H~>-oriented
-(state top-map
-  (enter
+(define (top-map s)
+  (H~> s
     (H~> ae
       ((const '( (hitbox (-1 -1) (1 1) (trce "INSIDE")) )) triggers)
       ((const -100)  transform.y)
       ((const  120)  tick.to-zero))
     (do-fade       (io.window io.window-size.width io.window-size.height))
-    )
-  (pre
+    ((set-fsm top-map*) io.main)
+    ))
+(define (top-map* s)
+  (H~>
+    s
+    top-map-pre
+    (top-map-pure ae)
+    top-map-post
+    ))
+(define (top-map-pre s)
+  (H~>
+    s
     (clear-graphics   ())
     (render-absolute  ())
     (context (io.transform)
@@ -34,21 +44,22 @@
       (get-keys               () (ae.keys))
       (glfwWindowShouldClose  () (ae.should-exit?))
       )
-    )
-  (pure
+    ))
+(define (top-map-pure s)
+  (H~>
+    s
     (collect-wasd           (keys) (keys.wasd))
     (last-key               (last-direction keys.wasd) (last-direction))
     ((step-to 0)            tick.to-zero)
     (pure   *)
-    (add1                      tick.iteration)
     (check-door-collision      (transform.x transform.y)  (collides?))
-    ((if* (set-fsm 'top-map))  (collides? fsm)            (fsm))
+    ; ((if* (set-fsm 'top-map))  (collides? fsm)            (fsm))
     ; ((set-fsm 'experimental)      fsm)
     (any-direction-keys?       (keys)                 (any-direction-keys?))
     ((if* add1)       (any-direction-keys?) tick.direction-keys)
-    )
-  (post
+    ))
+(define (top-map-post s)
+  (H~>
+    s
     (make-global-transform     (ae.transform)            (io.transform))
-    )
-  (exit)
-  )
+    ))

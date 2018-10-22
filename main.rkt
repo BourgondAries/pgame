@@ -25,11 +25,10 @@
 (reload!)
 
 (define (main)
-  (let loop ([state '()])
-    (when state
-      (loop (core state)))))
+  (core '()))
 
 (module+ main
+  (error-print-width 1000)
   (call-with-exception-handler
     breakpoint
     main))

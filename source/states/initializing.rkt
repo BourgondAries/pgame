@@ -13,15 +13,18 @@
 (define (initializing)
   (H~>
     (hasheq)
+    info
     (initialize-glfw    () (io.window))
     (add-sprites*       () (io.animation.madotsuki))
     ((const '())        ae.fsm)
-    ;((push-fsm 'core*)  ae.fsm)
     ((const 0)          ae.tick.direction-keys)
     ((const 0)          ae.tick.iteration)
     ((const 0)          ae.rotation)
-    ((const (list core*))     io.main)
+    ((const (list core*))     io.core)
   ))
+
+(define (add-tick s)
+  (H~> s (add1 ae.tick.iteration)))
 
 (define (initialize-glfw)
   (when (= (glfwInit) GLFW_FALSE)

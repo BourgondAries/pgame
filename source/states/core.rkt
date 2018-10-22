@@ -6,6 +6,7 @@
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
          "../../../genalg/main.rkt" "../state.rkt"
+         "decode-tmx.rkt" "menu.rkt" "top-map.rkt"
          "../breakpoint.rkt" "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt")
 
 (provide (all-defined-out))
@@ -20,9 +21,14 @@
     ((const '("data/basictiles.png" 1 1)) ae.tmp)
     ((const 0) ae.transform.x)
     ((const 0) ae.transform.y)
-    ((const (list core*-pre core*-pure core*-post)) io.core*)
-    ((loop~> io core*))
+    ((set-fsm cores) io.core)
     ))
+(define (cores s)
+  (H~>
+    s
+    core*-pre
+    (core*-pure* ae)
+    core*-post))
 (define (core*-pre s)
   (H~>
     s
@@ -36,11 +42,9 @@
                          io.window-size.height) io.perspective)
   ))
 
-(define (core*-pure s)
+(define (core*-pure* s)
   (H~>
     s
-    (H~> ae
-    (add1                   tick.iteration)
     (check-C-W-exit         (keys.left-control keys.w)   (should-exit?))
     (collect-wasd           (keys)                       (keys.wasd))
     (last-key               (last-direction keys.wasd)   (last-direction))
@@ -48,28 +52,24 @@
     (add1-if-true           (keys.q)   transform.r)
     (sub1-if-true           (keys.e)   transform.r)
     (count-walking          (keys) transform.x transform.y)
-    ((if* (push-fsm 'menu))            (keys.escape) fsm)
-    ((if* (push-fsm 'decode-tmx))      (keys.g) fsm)
     (check-door-collision              (transform.x transform.y)  (collides?))
     (check-collision                   (transform collidables) (action))
-    ((if* (push-fsm 'top-map))         (collides?)            fsm)
     ; (any-direction-keys?               (keys)                 (any-direction-keys?))
-    )))
+    ))
 
 (define (core*-post s)
   (H~>
     s
+    (exit-c (ae.should-exit?) io.main)
+    ((if* (push-fsm decode-tmx))   (ae.keys.g)  io.core)
+    ((if* (set-fsm top-map))  (ae.collides?)   io.core)
+    ((if* (push-fsm menu))     (ae.keys.escape) io.core)
     (make-global-transform*    (ae.transform)   (io.transform))
-    ; (erro io.transform)
-    ; (erro io.perspective)
-    ; (erro io.view)
     (mat* (io.transform io.perspective) (io.view))
-    ; (erro io.view)
     (clear-graphics           ())
     (render-absolute   ())
     (context (io.transform)
       (draw              (ae.tick.direction-keys ae.last-direction io.animation.madotsuki) ())
-
       (draw-relative     (io.render.relative)                                              ())
       )
     (draw-texture-2    (io.perspective ae.tmp))
