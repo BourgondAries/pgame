@@ -5,8 +5,8 @@
              threading)
   ffi/vector finalizer math/matrix opengl opengl/util threading
   glfw3 logger memo nested-hash spipe
- "../state.rkt"
- "../breakpoint.rkt" "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt" "../state.rkt")
+  "../state.rkt"
+  "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt" "../state.rkt")
 
 (provide (all-defined-out))
 

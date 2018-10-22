@@ -5,8 +5,8 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
-         "genalg.rkt" "core.rkt"
-         "../breakpoint.rkt" "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt" "../state.rkt")
+         "core.rkt"
+         "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt" "../state.rkt")
 
 (provide (all-defined-out))
 
@@ -49,9 +49,7 @@
   (glfwSetInputMode window GLFW_STICKY_KEYS GL_TRUE)
   ; (glPolygonMode GL_FRONT_AND_BACK GL_LINE)
   (glPolygonMode GL_FRONT GL_FILL)
-  ;;
   (collect-garbage 'incremental)
-  ;;
   window)
 
 (define (add-sprites*)

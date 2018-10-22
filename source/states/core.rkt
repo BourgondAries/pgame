@@ -5,9 +5,9 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
-         "../../../genalg/main.rkt" "../state.rkt"
+         "../state.rkt"
          "decode-tmx.rkt" "menu.rkt" "top-map.rkt"
-         "../breakpoint.rkt" "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt")
+         "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt")
 
 (provide (all-defined-out))
 
@@ -70,7 +70,7 @@
     (render-absolute   ())
     (context (io.transform)
       (draw              (ae.tick.direction-keys ae.last-direction io.animation.madotsuki) ())
-      (draw-relative     (io.render.relative)                                              ())
+      ; (draw-relative     (io.render.relative)                                              ())
       )
     (draw-texture-2    (io.perspective ae.tmp))
     (drawtext2         (io.perspective ae.tick.iteration))

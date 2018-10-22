@@ -17,7 +17,7 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
-         "breakpoint.rkt" "drawing.rkt" "pure.rkt")
+         "drawing.rkt" "pure.rkt")
 
 (define-syntax-parser push-view
   ([_ view:expr body:expr ...+]
