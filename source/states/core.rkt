@@ -1,15 +1,8 @@
 #lang racket
 
-(require racket/list syntax/parse/define
-         (for-syntax racket/base racket/list racket/string
-                     threading)
-         ffi/vector finalizer math/matrix opengl opengl/util threading
-         glfw3 logger memo nested-hash spipe
-         "../state.rkt"
-         "decode-tmx.rkt" "menu.rkt" "top-map.rkt"
-         "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt")
-
 (provide (all-defined-out))
+
+(require "../all.rkt")
 
 (define (mat* x y)
   (matrix* x y))

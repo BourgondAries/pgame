@@ -133,7 +133,6 @@
   (glfwPollEvents)
   (for/fold ([table* table])
             ([(x y) table])
-    (trce x y)
     (hash-set table* x #f)
   ))
 

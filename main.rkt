@@ -19,4 +19,5 @@
 
 (reload!)
 
-(core '())
+(module+ main
+  (void (core '())))
