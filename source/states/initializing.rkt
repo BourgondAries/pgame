@@ -5,7 +5,7 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
-         "core.rkt"
+         "core.rkt" "experimental.rkt"
          "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt" "../state.rkt")
 
 (provide (all-defined-out))
@@ -15,12 +15,15 @@
     (hasheq)
     info
     (initialize-glfw    () (io.window))
+    (context (io.window)
+      (get-window-size          ()      (io.window-size.width io.window-size.height))
+      )
     (add-sprites*       () (io.animation.madotsuki))
     ((const '())        ae.fsm)
     ((const 0)          ae.tick.direction-keys)
     ((const 0)          ae.tick.iteration)
     ((const 0)          ae.rotation)
-    ((const (list core*))     io.core)
+    ((const (list experimental))     io.core)
   ))
 
 (define (add-tick s)

@@ -54,9 +54,9 @@
   (H~>
     s
     (exit-c (ae.should-exit?) io.main)
-    ((if* (push-fsm decode-tmx))   (ae.keys.g)  io.core)
-    ((if* (set-fsm top-map))  (ae.collides?)   io.core)
-    ((if* (push-fsm menu))     (ae.keys.escape) io.core)
+    ((if* (push-fsm decode-tmx)) (ae.keys.g)  io.core)
+    ((if* (set-fsm top-map))     (ae.collides?)   io.core)
+    ((if* (push-fsm menu))       (ae.keys.escape) io.core)
     (make-global-transform*    (ae.transform)   (io.transform))
     (mat* (io.transform io.perspective) (io.view))
     (clear-graphics           ())

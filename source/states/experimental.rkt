@@ -5,15 +5,21 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
-         "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt" "../state.rkt")
+         "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt")
 
 (provide (all-defined-out))
 
-(state experimental
-  (enter
+(define (experimental s)
+  (trce 'TEST)
+  (H~>
+    s
     (do-fade       (io.window io.window-size.width io.window-size.height))
-    )
-  (pre
+    ((const  120)  ae.tick.to-zero)
+    ((set-fsm experimental*) io.main)
+  ))
+(define (experimental* s)
+  (H~>
+    s
     (glfwGetWindowSize      (io.window) (io.window-size.width io.window-size.height))
     (perspective            (io.window-size.width io.window-size.height) (io.graphics.perspective))
     (clear-graphics    ())
@@ -29,18 +35,14 @@
       (glfwSwapBuffers        ())
       (get-keys               () (ae.keys))
       )
+    (H~> ae
+      (collect-wasd           (keys) (keys.wasd))
+      (last-key               (last-direction keys.wasd) (last-direction))
+      ((step-to 0)  tick.to-zero)
+      (pure *)
+      (add1 tick.iteration)
+      (any-direction-keys?       (keys)                 (any-direction-keys?))
+      ((if* add1)       (any-direction-keys?) tick.direction-keys)
     )
-  (pure
-    (collect-wasd           (keys) (keys.wasd))
-    (last-key               (last-direction keys.wasd) (last-direction))
-    ((step-to 0)  tick.to-zero)
-    (pure *)
-    (add1 tick.iteration)
-    (any-direction-keys?       (keys)                 (any-direction-keys?))
-    ((if* add1)       (any-direction-keys?) tick.direction-keys)
-    )
-  (post
     (make-global-transform     (ae.transform)            (io.transform))
-    )
-  (exit)
-  )
+  ))
