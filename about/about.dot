@@ -1,9 +1,8 @@
 digraph G {
   compound = true;
-  M [label = "fsm-master"];
   start [style = filled , fillcolor = green];
 
-  start -> initialization -> M;
+  start -> initialization;
   subgraph cluster_IO {
     label = "IO functions (audio, files, graphics, threads)";
     style = filled;
@@ -15,6 +14,7 @@ digraph G {
     label = "FSM States";
     style = filled;
     fillcolor = green;
+    initialization;
     core;
     menu;
     escape;
@@ -33,24 +33,6 @@ digraph G {
     glfw;
     opengl;
   }
-  subgraph cluster_T {
-    label = "Example state\nAll states are made up\nof 5 functions.";
-    enter -> pre;
-    enter [style = filled , fillcolor = orange , xlabel = "Sets up state so the loop can run correctly"];
-    subgraph cluster_L {
-      label = "Runs in a loop until\nanother state is requested";
-      pre -> pure -> post -> pre;
-      pre [style = filled , fillcolor = orange , xlabel = "Pre-pure processing"];
-      pure [style = filled , fillcolor = green , xlabel = "The pure part of a state transition"];
-      post [style = filled , fillcolor = orange , xlabel = "Post-pure processing"];
-    }
-    post -> exit;
-    exit [style = filled , fillcolor = orange , xlabel = "Destroy parts of state"];
-  }
-
-  core -> enter [label = "Contains" , lhead = cluster_T];
-  M -> menu [label = "Jumps into" , lhead = cluster_S];
-  menu -> M [label = "Trampolines" , ltail = cluster_S];
 
   core -> drawing [label = "Uses" , lhead = cluster_IO , ltail = cluster_S];
   escape -> pure_dummy [label = "Uses" , lhead = cluster_PURE , ltail = cluster_S];
