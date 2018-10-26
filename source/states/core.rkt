@@ -25,7 +25,7 @@
 (define (core*-pre s)
   (H~>
     s
-    (context (io.window)
+    (#:context (io.window)
       (get-window-size          ()      (io.window-size.width io.window-size.height))
       (get-keys                 ()      (ae.keys))
       (glfwWindowShouldClose    ()      (ae.should-exit?))
@@ -61,7 +61,7 @@
     (mat* (io.transform io.perspective) (io.view))
     (clear-graphics           ())
     (render-absolute   ())
-    (context (io.transform)
+    (#:context (io.transform)
       (draw              (ae.tick.direction-keys ae.last-direction io.animation.madotsuki) ())
       ; (draw-relative     (io.render.relative)                                              ())
       )

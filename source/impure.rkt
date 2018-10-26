@@ -229,7 +229,7 @@
     (H~>
       state
       (render-absolute   ())
-      (context (io.transform)
+      (#:context (io.transform)
         (draw              (ae.tick.direction-keys ae.last-direction io.animation.madotsuki) ())
         (draw-relative     (io.render.relative)                                              ()))
       (drawtext          (ae.tick.direction-keys))

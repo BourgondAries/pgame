@@ -15,7 +15,7 @@
     (hasheq)
     info
     (initialize-glfw    () (io.window))
-    (context (io.window)
+    (#:context (io.window)
       (get-window-size          ()      (io.window-size.width io.window-size.height))
       )
     (add-sprites*       () (io.animation.madotsuki))
