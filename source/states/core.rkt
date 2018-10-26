@@ -4,9 +4,6 @@
 
 (require "../all.rkt")
 
-(define (mat* x y)
-  (matrix* x y))
-
 (define (core* s)
   (H~>
     s
@@ -58,7 +55,7 @@
     ((if* (set-fsm top-map))     (ae.collides?)   io.core)
     ((if* (push-fsm menu))       (ae.keys.escape) io.core)
     (make-global-transform*    (ae.transform)   (io.transform))
-    (mat* (io.transform io.perspective) (io.view))
+    (matrix* (io.transform io.perspective) (io.view))
     (clear-graphics           ())
     (render-absolute   ())
     (#:context (io.transform)
