@@ -1,33 +1,22 @@
 #lang racket
 
-(require racket/list syntax/parse/define
-         (for-syntax racket/base racket/list racket/string
-                     threading)
-         ffi/vector finalizer math/matrix opengl opengl/util threading
-         glfw3 logger memo nested-hash spipe
-         "core.rkt" "experimental.rkt"
-         "../drawing.rkt" "../impure.rkt" "../pure.rkt" "../shutdown.rkt" "../state.rkt")
+(require "../all.rkt" "core.rkt")
 
 (provide (all-defined-out))
 
-(define (initializing)
-  (H~>
-    (hasheq)
-    info
-    (initialize-glfw    () (io.window))
-    (#:context (io.window)
-      (get-window-size          ()      (io.window-size.width io.window-size.height))
-      )
-    (add-sprites*       () (io.animation.madotsuki))
-    ((const '())        ae.fsm)
-    ((const 0)          ae.tick.direction-keys)
-    ((const 0)          ae.tick.iteration)
-    ((const 0)          ae.rotation)
-    ((const (list experimental))     io.core)
-  ))
-
-(define (add-tick s)
-  (H~> s (add1 ae.tick.iteration)))
+(define/H~> initializing
+  ((const (hasheq)))
+  (initialize-glfw        () (io.window))
+  (#:context (io.window)
+    (get-window-size      ()      (io.window-size.width io.window-size.height))
+    )
+  (add-sprites*          () (io.animation.madotsuki))
+  ((const '())           ae.fsm)
+  ((const 0)             ae.tick.direction-keys)
+  ((const 0)             ae.tick.iteration)
+  ((const 0)             ae.rotation)
+  ((const (list core*))  io.core)
+  )
 
 (define (initialize-glfw)
   (when (= (glfwInit) GLFW_FALSE)
@@ -48,7 +37,7 @@
   (glEnable GL_MULTISAMPLE)
   (glBlendFunc GL_ONE GL_ONE_MINUS_SRC_ALPHA)
   (glDisable GL_DEPTH_TEST)
-  (glClearColor 0.3 0.8 0.3 0.)
+  (glClearColor 0.004 1.0 0.43 0.)
   (glfwSetInputMode window GLFW_STICKY_KEYS GL_TRUE)
   ; (glPolygonMode GL_FRONT_AND_BACK GL_LINE)
   (glPolygonMode GL_FRONT GL_FILL)
