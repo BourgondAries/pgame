@@ -3,13 +3,16 @@
 (provide show-visualization)
 
 (require racket/file racket/function racket/list racket/port racket/string racket/system
+         "pure.rkt"
          logger)
 
 ;; Settings for tuning the graph
-(define font-size-small 6)
-(define font-size-normal 12)
-(define max-value-length 50)
-(define smaller-font-value-length 30)
+(defines
+  (font-size-small 6)
+  (font-size-normal 12)
+  (max-value-length 50)
+  (smaller-font-value-length 30)
+  )
 
 
 ;; Turn a table into a list and sort the result
@@ -86,4 +89,3 @@
                     (run-command)))))
   (when (non-empty-string? command-error)
     (crit+ command-error)))
-

@@ -69,7 +69,7 @@
     ((if* (push-fsm 'menu)) (keys.escape fsm) (fsm))
   ))
 
-(define-syntax-parser defines**
+(define-syntax-parser defines
   ([_ (name:id val:expr) ...+]
    #'(begin (define name val) ...)))
 
@@ -85,7 +85,7 @@
 ;; rect: #s(lx by rx ty)
 (define (collides? rect-1 rect-2)
   (define (collides?* rect-1 rect-2)
-    (defines**
+    (defines
       (r1-l (first  rect-1))
       (r1-b (second rect-1))
       (r1-r (third  rect-1))
