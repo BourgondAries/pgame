@@ -14,7 +14,6 @@
   "drawing.rkt"
   "impure.rkt"
   "pure.rkt"
-  "shutdown.rkt"
   "states/decode-tmx.rkt"
   "states/menu.rkt"
   "states/top-map.rkt"
