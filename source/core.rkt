@@ -6,6 +6,7 @@
 
 (define (core state)
   (H~>
+    state
     (initializing)
     ((const (list core2)) io.main)
     ((loop~> io main))

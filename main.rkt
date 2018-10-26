@@ -20,4 +20,6 @@
 (reload!)
 
 (module+ main
-  (void (core '())))
+  (void
+    (core '())
+    ))
