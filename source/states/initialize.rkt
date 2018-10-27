@@ -4,7 +4,7 @@
 
 (provide (all-defined-out))
 
-(define/H~> initializing
+(define/H~> initialize
   ((const (hasheq)))
   (initialize-glfw        () (io.window))
   (#:context (io.window)

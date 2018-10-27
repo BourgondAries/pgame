@@ -9,9 +9,10 @@
 
 (provide shutdown)
 
-(require "../all.rkt")
+(require pgame/source/all)
 
 (define/H~> shutdown
   (glfwDestroyWindow  io.window)
   (glfwTerminate      ())
+  (pop-fsm            io.main)
   )
