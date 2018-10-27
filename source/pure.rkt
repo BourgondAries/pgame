@@ -165,8 +165,8 @@
       value
       0)))
 
-(define (check-C-W-exit left-control w)
-  (and left-control w))
+(define (check-C-W-exit left-control w previous)
+  (or (and left-control w) previous))
 
 (define (exit-c ? lst)
   (if ? '() lst))

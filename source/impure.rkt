@@ -19,6 +19,10 @@
          glfw3 logger memo nested-hash spipe
          "drawing.rkt" "pure.rkt")
 
+(define (glfwWindowShouldClose* window previous)
+  (or previous (= GLFW_TRUE (glfwWindowShouldClose window)))
+  )
+
 (define-syntax-parser push-view
   ([_ view:expr body:expr ...+]
    #'(parameterize ([*view* (matrix* view (*view*))])

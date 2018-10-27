@@ -20,7 +20,7 @@
   (#:context (io.window)
     (get-window-size          ()      (io.window-size.width io.window-size.height))
     (get-keys                 ()      (ae.keys))
-    (glfwWindowShouldClose    ()      (ae.should-exit?))
+    (glfwWindowShouldClose*   ()      ae.should-exit?)
     )
   (update-perspective (ae.tick.iteration
                        io.window-size.width
@@ -28,7 +28,7 @@
   )
 
 (define/H~> core*-pure*
-  (check-C-W-exit         (keys.left-control keys.w)   (should-exit?))
+  (check-C-W-exit         (keys.left-control keys.w)   should-exit?)
   (collect-wasd           (keys)                       (keys.wasd))
   (last-key               (last-direction keys.wasd)   (last-direction))
   (compute-walk-tick      (keys)                       tick.direction-keys)
