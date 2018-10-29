@@ -57,7 +57,7 @@
 (define (pure state)
   (H~>
     state
-    (check-C-W-exit (keys.left-control keys.w) (should-exit?))
+    (check-C-W-exit (keys.left-control keys.w) should-exit?)
     (add1-if-true (keys.q transform.r) (transform.r))
     (sub1-if-true (keys.e transform.r) (transform.r))
     (add1-if-true (keys.w transform.y) (transform.y))

@@ -21,20 +21,25 @@
          ((curry cons '(term ...)) fsm)
          ((top~> term ...))
          (rest fsm)))))
+(define-syntax-parser loop~>*
+  ([_ term:id ...+]
+   #'(lambda (state)
+       (H~>
+         state
+         ((curry cons '(term ...)) fsm)
+         ((loop~> term ...))
+         (rest fsm)))))
 
 (define/H~> core
   (initialize)
   ((const '()) fsm)
   ((const (list core2 shutdown)) io.main)
   ((top-loop~>* io main))
-  (trce)
   )
 
 (define/H~> core2
   (add1 ae.tick.iteration)
   (dbug ae.tick.iteration)
-  ((top~>* io core)) ; if empty, pop parent
-  (crit io.core)
+  ((top~>* io core))
   ((if-empty-pop '(io core)))
-  (crit)
   )

@@ -14,7 +14,7 @@
 (define/H~> cores
   core*-pre
   (current-s *)
-  pop ; I'm done
+  ; pop ; I'm done
   (core*-pure* ae)
   core*-post
   )
