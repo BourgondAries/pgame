@@ -14,5 +14,5 @@
 (define/H~> shutdown
   (glfwDestroyWindow  io.window)
   (glfwTerminate      ())
-  (pop-fsm            io.main)
+  pop
   )

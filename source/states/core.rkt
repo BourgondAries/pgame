@@ -2,7 +2,7 @@
 
 (provide (all-defined-out))
 
-(require "../all.rkt")
+(require "../all.rkt" "shutdown.rkt")
 
 (define/H~> core*
   ((const (identity-matrix 4)) io.neutral)
@@ -13,10 +13,13 @@
   )
 (define/H~> cores
   core*-pre
+  (current-s *)
+  pop ; I'm done
   (core*-pure* ae)
   core*-post
   )
 (define/H~> core*-pre
+  (dbug fsm)
   (#:context (io.window)
     (get-window-size          ()      (io.window-size.width io.window-size.height))
     (get-keys                 ()      (ae.keys))
