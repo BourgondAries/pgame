@@ -6,10 +6,8 @@
 
 (define/H~> initialize
   ((const (hasheq)))
-  (initialize-glfw        () (io.window))
-  (#:context (io.window)
-    (get-window-size      ()      (io.window-size.width io.window-size.height))
-    )
+  (initialize-glfw       () (io.window))
+  (get-window-size       (io.window) (io.window-size.width io.window-size.height))
   (add-sprites*          () (io.animation.madotsuki))
   ((const '())           ae.fsm)
   ((const 0)             ae.tick.direction-keys)
