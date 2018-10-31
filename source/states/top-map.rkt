@@ -17,7 +17,7 @@
     ((const -100)  transform.y)
     ((const  120)  tick.to-zero))
   (do-fade       (io.window io.window-size.width io.window-size.height))
-  ((set-fsm top-map*) io.main)
+  ((set-fsm top-map*) io.core)
   )
 (define/H~> top-map*
   top-map-pre
@@ -25,7 +25,6 @@
   top-map-post
   )
 (define/H~> top-map-pre
-  (clear-graphics   ())
   (render-absolute  ())
   (#:context (io.transform)
     (draw             (ae.tick.direction-keys ae.last-direction io.animation.madotsuki))
@@ -34,7 +33,6 @@
   (fade/invert            (ae.tick.to-zero))
   ; (trce ae.tick.to-zero)
   (#:context (io.window)
-    (glfwSwapBuffers        ())
     (get-keys               () (ae.keys))
     (glfwWindowShouldClose  () (ae.should-exit?))
     )

@@ -50,7 +50,6 @@
   ((if* (push-fsm menu))       (ae.keys.escape) io.core)
   (make-global-transform*    (ae.transform)   (io.transform))
   (matrix* (io.transform io.perspective) (io.view))
-  (clear-graphics           ())
   (render-absolute   ())
   (#:context (io.transform)
     (draw              (ae.tick.direction-keys ae.last-direction io.animation.madotsuki) ())
@@ -60,5 +59,4 @@
   (drawtext2         (io.perspective ae.tick.iteration))
   (draw-coin         (ae.tick.iteration))
   (draw-portal       (ae.tick.iteration))
-  (glfwSwapBuffers   (io.window))
   )

@@ -2,7 +2,7 @@
 
 (provide core)
 
-(require spipe logger "pure.rkt" "states/initialize.rkt" "states/shutdown.rkt")
+(require spipe logger glfw3 "impure.rkt" "pure.rkt" "states/initialize.rkt" "states/shutdown.rkt")
 (require syntax/parse/define)
 
 (define-syntax-parser top-loop~>*
@@ -39,7 +39,8 @@
 
 (define/H~> core2
   (add1 ae.tick.iteration)
-  (dbug ae.tick.iteration)
+  (clear-graphics           ())
   ((top~>* io core))
+  (glfwSwapBuffers (io.window))
   ((if-empty-pop '(io core)))
   )
