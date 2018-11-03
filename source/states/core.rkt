@@ -48,6 +48,8 @@
   ((if* (set-fsm top-map))     (ae.collides?)   io.core)
   ((if* (push-fsm menu))       (ae.keys.escape) io.core)
   ((if* (push-fsm native-menu))       (ae.keys.b)      io.core)
+  (or* (ae.keys.g ae.collides? ae.keys.escape ae.keys.b) (ae.should-clear?))
+  (not ae.should-clear?)
   (make-global-transform*    (ae.transform)   (io.transform))
   (matrix* (io.transform io.perspective) (io.view))
   (render-absolute   ())

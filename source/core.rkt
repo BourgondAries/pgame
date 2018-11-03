@@ -9,14 +9,21 @@
   (initialize)
   ((const '()) fsm)
   ((const (list core2 shutdown)) io.main)
+  ((const #t)         ae.should-clear?)
   ((top-loop~>* io main))
   )
 
 (define/H~> core2
   (add1            ae.tick.iteration)
   ((oscillate 60)  (ae.tick.iteration) (ae.tick.oscillate))
-  (clear-graphics     ())
+  ; (crash-if (ae.should-clear?))
+  (clear-graphics    (ae.should-clear?))
+  ((const #t)         ae.should-clear?)
   ((top~>* io core))
   (glfwSwapBuffers             (io.window))
   ((if-empty-pop '(io core)))
   )
+
+(define (crash-if s)
+  (when (not s)
+    (exit 1)))

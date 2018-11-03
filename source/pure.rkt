@@ -128,8 +128,10 @@
     wasd
     (or last-direction 'd)))
 
-
 (define (add1* n) (if n (add1 n) 0))
+
+(define (or* . lst)
+  (ormap identity lst))
 
 (define (should-exit? state)
   (nested-hash-ref state 'ae 'should-exit?))

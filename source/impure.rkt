@@ -92,8 +92,9 @@
                 '((0 0 0 0) (0 1 0 0) (1 0 0 1)))
   ))
 
-(define (clear-graphics)
-  (glClear GL_COLOR_BUFFER_BIT))
+(define (clear-graphics should-clear?)
+  (when should-clear?
+    (glClear GL_COLOR_BUFFER_BIT)))
 
 (define (drawtext tick)
   ((animate-texture "data/text.png" '(-0.5 -0.5) '(0 0) 14 3) (floor (/ tick 12))
