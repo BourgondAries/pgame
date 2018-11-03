@@ -30,11 +30,6 @@
   ([_ value:expr ...+]
    #'(values ((const #f) value) ...)))
 
-(define (pop-fsm fsm)
-  (if (empty? fsm)
-    empty
-    (rest fsm)))
-
 (define ((push-fsm symbol) fsm)
   (cons symbol fsm))
 
