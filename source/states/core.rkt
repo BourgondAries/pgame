@@ -2,7 +2,7 @@
 
 (provide (all-defined-out))
 
-(require "../all.rkt" "shutdown.rkt")
+(require "../all.rkt" "shutdown.rkt" "native-menu.rkt")
 
 (define/H~> core*
   ((const (identity-matrix 4)) io.neutral)
@@ -14,7 +14,6 @@
 (define/H~> cores
   core*-pre
   (current-s *)
-  ; pop ; I'm done
   (core*-pure* ae)
   core*-post
   )
@@ -48,6 +47,7 @@
   ((if* (push-fsm decode-tmx)) (ae.keys.g)  io.core)
   ((if* (set-fsm top-map))     (ae.collides?)   io.core)
   ((if* (push-fsm menu))       (ae.keys.escape) io.core)
+  ((if* (push-fsm native-menu))       (ae.keys.b)      io.core)
   (make-global-transform*    (ae.transform)   (io.transform))
   (matrix* (io.transform io.perspective) (io.view))
   (render-absolute   ())

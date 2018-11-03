@@ -30,19 +30,11 @@
   ([_ value:expr ...+]
    #'(values ((const #f) value) ...)))
 
-(define ((push-fsm symbol) fsm)
-  (cons symbol fsm))
-
 (define ((step-to value) x)
   (cond
     ([> x value] (sub1 x))
     ([= x value] x)
     ([< x value] (add1 x))))
-
-(define ((set-fsm symbol) fsm)
-  (if (empty? fsm)
-      (list symbol)
-      (cons symbol (rest fsm))))
 
 (define (ticker v x y)
   (values (modulo v x)
@@ -203,3 +195,5 @@
                         (rest (nested-hash-ref* state (first (hash-ref state 'fsm)))))
       )
     state))
+(define ((oscillate divisor) tick)
+  (sin (/ tick divisor)))
