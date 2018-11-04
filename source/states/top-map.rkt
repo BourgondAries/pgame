@@ -33,11 +33,12 @@
   (fade/invert            (ae.tick.to-zero))
   ; (trce ae.tick.to-zero)
   (#:context (io.window)
-    (get-keys               () (ae.keys))
-    (glfwWindowShouldClose  () (ae.should-exit?))
+    (get-keys                () (ae.keys))
+    (glfwWindowShouldClose*  () ae.should-exit?)
     )
   )
 (define/H~> top-map-pure
+  (check-C-W-exit         (keys.left-control keys.w)   should-exit?)
   (collect-wasd           (keys) (keys.wasd))
   (last-key               (last-direction keys.wasd) (last-direction))
   ((step-to 0)            tick.to-zero)
@@ -49,5 +50,6 @@
   ((if* add1)       (any-direction-keys?) tick.direction-keys)
   )
 (define/H~> top-map-post
+  (exit-c (ae.should-exit?) io.main)
   (make-global-transform     (ae.transform)            (io.transform))
   )

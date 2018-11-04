@@ -11,16 +11,18 @@
 
 (provide (all-defined-out))
 
-(require racket/list
-         nested-hash spipe
-         logger
-         syntax/parse/define racket/function (for-syntax racket/base))
+(require logger nested-hash spipe
+         racket/function
+         racket/list
+         syntax/parse/define
+         (for-syntax racket/base))
 
 (define-syntax-parser expand-single
   ([_ value:expr fn:id]
    #'(fn value))
   ([_ value:expr (fn:expr arg ...)]
    #'(fn value arg ...)))
+
 (define-syntax-parser context
   ([_ value:expr operand:expr ...]
    #'(let ([result value])
@@ -163,16 +165,20 @@
 (define (get-fsm state)
   (define name (first (hash-ref state 'fsm)))
   name)
+
 (define (get-fsm-second state)
   (info (hash-ref state 'fsm))
   (define name (second (hash-ref state 'fsm)))
   name)
+
 (define (current-state state)
   (define name (first (hash-ref state 'fsm)))
   (define t (apply nested-hash-ref state name))
   (trce t))
+
 (define (current-state2 state name)
   (apply nested-hash-ref state name))
+
 (define (current-s state)
   (define machines (map (curry current-state2 state) (hash-ref state 'fsm)))
   (trce machines))
@@ -181,14 +187,17 @@
   (define cool (get-fsm state))
   (nested-hash-set* state cool (rest (nested-hash-ref* state cool)))
   )
+
 (define ((push fn) state)
   (define cool (get-fsm state))
   (nested-hash-set* state cool (cons fn (nested-hash-ref* state cool)))
   )
+
 (define (pop-parent state)
   (define cool (get-fsm-second state))
   (nested-hash-set* state cool (rest (nested-hash-ref* state cool)))
   )
+
 (define ((if-empty-pop which) state)
   (if (empty? (nested-hash-ref* state which))
     (begin
@@ -197,5 +206,6 @@
                         (rest (nested-hash-ref* state (first (hash-ref state 'fsm)))))
       )
     state))
+
 (define ((oscillate divisor) tick)
   (sin (/ tick divisor)))
