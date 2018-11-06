@@ -63,3 +63,20 @@
   (draw-coin         (ae.tick.iteration))
   (draw-portal       (ae.tick.iteration))
   )
+
+(module+ test
+  (require errortrace rackunit)
+  )
+
+(module+ test
+  (define fixture
+    (variables (hasheq)
+      (keys (hasheq))
+      (transform.x 0)
+      (transform.y 0)
+      (tick.direction-keys (hasheq))
+      ))
+  (test-equal? "Ensure should-exit is not negated"
+               (hash-ref (core*-pure* (H~> fixture ((const #t) should-exit?))) 'should-exit?)
+               #t)
+  )
