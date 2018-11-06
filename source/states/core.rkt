@@ -13,12 +13,11 @@
   )
 (define/H~> cores
   core*-pre
-  (current-s *)
+  ; (current-s *)
   (core*-pure* ae)
   core*-post
   )
 (define/H~> core*-pre
-  (dbug fsm)
   (#:context (io.window)
     (get-window-size          ()      (io.window-size.width io.window-size.height))
     (get-keys                 ()      (ae.keys))
@@ -37,8 +36,10 @@
   (add1-if-true           (keys.q)   transform.r)
   (sub1-if-true           (keys.e)   transform.r)
   (count-walking          (keys) transform.x transform.y)
-  (check-door-collision              (transform.x transform.y)  (collides?))
-  (check-collision                   (transform collidables) (action))
+  (check-door-collision   (transform.x transform.y)  (collides?))
+  (check-collision        (transform collidables) (action))
+  (check-box              (transform.x transform.y) should-exit?)
+  ; (dbug (transform.x transform.y))
   ; (any-direction-keys?               (keys)                 (any-direction-keys?))
   )
 
@@ -51,8 +52,8 @@
   (or* (ae.keys.g ae.collides? ae.keys.escape ae.keys.b) (ae.should-clear?))
   (not ae.should-clear?)
   (make-global-transform*    (ae.transform)   (io.transform))
-  (matrix* (io.transform io.perspective) (io.view))
   (render-absolute   ())
+  (matrix* (io.transform io.perspective) (io.view))
   (#:context (io.transform)
     (draw              (ae.tick.direction-keys ae.last-direction io.animation.madotsuki) ())
     ; (draw-relative     (io.render.relative)                                              ())

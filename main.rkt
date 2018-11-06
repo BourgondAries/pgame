@@ -4,7 +4,7 @@
 ;;
 ;; This file sets up the reloadable entry point and break
 ;; handler, allowing one to modify code while running
-;; the program. See source/core.rkt for the entry point.
+;; the program.
 ;;
 ;; For documentation first run `raco pkg install pgame/`,
 ;; and then see `raco docs pgame`.
@@ -17,9 +17,5 @@
   (reloadable-entry-point->procedure
     (make-reloadable-entry-point 'core "source/core.rkt")))
 
-(reload!)
-
-(module+ main
-  (void
-    (core '())
-    ))
+(void (reload!))
+(void (core '()))

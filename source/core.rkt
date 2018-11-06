@@ -27,3 +27,6 @@
 (define (crash-if s)
   (when (not s)
     (exit 1)))
+
+(module+ main
+  (core '()))

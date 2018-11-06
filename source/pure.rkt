@@ -71,7 +71,6 @@
   0
   )
 
-;; rect: #s(lx by rx ty)
 (define (collides? rect-1 rect-2)
   (define (collides?* rect-1 rect-2)
     (defines
@@ -182,6 +181,10 @@
 (define (current-s state)
   (define machines (map (curry current-state2 state) (hash-ref state 'fsm)))
   (trce machines))
+
+(define (check-box x y hit?)
+  (or hit? (collides? (list x y x y) '(10 10 30 30)))
+  )
 
 (define (pop state)
   (define cool (get-fsm state))
