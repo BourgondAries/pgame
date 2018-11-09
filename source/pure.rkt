@@ -124,7 +124,9 @@
 
 (define (compute-walk-tick keys tick)
   (if (any-direction-keys? keys)
-    (add1 tick)
+    (if (= tick 0)
+      8
+      (add1 tick))
     0))
 
 (define (last-key last-direction wasd)
