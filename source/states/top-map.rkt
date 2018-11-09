@@ -39,8 +39,7 @@
   )
 (define/H~> top-map-pure
   (check-C-W-exit         (keys.left-control keys.w)   should-exit?)
-  (collect-wasd           (keys) (keys.wasd))
-  (last-key               (last-direction keys.wasd) (last-direction))
+  walk
   ((step-to 0)            tick.to-zero)
   (pure   *)
   (check-door-collision      (transform.x transform.y)  (collides?))

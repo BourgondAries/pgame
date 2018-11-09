@@ -4,7 +4,8 @@
 ;;
 ;; None of the procedures in this file shall communicate with
 ;; the system, perform network IO, send messages to threads,
-;; or change some state.
+;; or change some state. Neither shall this file know about
+;; project data.
 ;;
 ;; This file is intended to contain pure logic.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -17,20 +18,22 @@
          syntax/parse/define
          (for-syntax racket/base))
 
-(define-syntax-parser expand-single
-  ([_ value:expr fn:id]
-   #'(fn value))
-  ([_ value:expr (fn:expr arg ...)]
-   #'(fn value arg ...)))
+(define/H~> walk
+  (collect-wasd           (keys)                       (keys.wasd))
+  (last-key               (last-direction keys.wasd)   (last-direction))
+  (compute-walk-tick      (keys)                       tick.direction-keys)
+  (add1-if-true           (keys.q)   transform.r)
+  (sub1-if-true           (keys.e)   transform.r)
+  (count-walking          (keys) transform.x transform.y)
+  )
 
-(define-syntax-parser context
-  ([_ value:expr operand:expr ...]
-   #'(let ([result value])
-       (expand-single result operand) ...)))
+(define (collect-wasd keys)
+  (or
+    (if (hash-ref keys 'a #f) 'a #f)
+    (if (hash-ref keys 'd #f) 'd #f)
+    (if (hash-ref keys 'w #f) 'w #f)
+    (if (hash-ref keys 's #f) 's #f)))
 
-(define-syntax-parser set-false
-  ([_ value:expr ...+]
-   #'(values ((const #f) value) ...)))
 
 (define ((step-to value) x)
   (cond

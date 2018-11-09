@@ -6,7 +6,7 @@
 
 (define/H~> core*
   ((const (identity-matrix 4)) io.neutral)
-  ((const '("data/basictiles.png" 1 1)) ae.tmp)
+  ((const '("data/basictiles.png" 1 1)) ae.tilemap-data)
   ((const 0) ae.transform.x)
   ((const 0) ae.transform.y)
   ((set-fsm cores) io.core)
@@ -30,12 +30,7 @@
 
 (define/H~> core*-pure*
   (check-C-W-exit         (keys.left-control keys.w)   should-exit?)
-  (collect-wasd           (keys)                       (keys.wasd))
-  (last-key               (last-direction keys.wasd)   (last-direction))
-  (compute-walk-tick      (keys)                       tick.direction-keys)
-  (add1-if-true           (keys.q)   transform.r)
-  (sub1-if-true           (keys.e)   transform.r)
-  (count-walking          (keys) transform.x transform.y)
+  walk
   (check-door-collision   (transform.x transform.y)  (collides?))
   (check-collision        (transform collidables) (action))
   (check-box              (transform.x transform.y) should-exit?)
@@ -58,7 +53,7 @@
     (draw              (ae.tick.direction-keys ae.last-direction io.animation.madotsuki) ())
     ; (draw-relative     (io.render.relative)                                              ())
     )
-  (draw-texture-2    (io.perspective ae.tmp))
+  (draw-texture-2    (io.perspective ae.tilemap-data))
   (drawtext2         (io.perspective ae.tick.iteration))
   (draw-coin         (ae.tick.iteration))
   (draw-portal       (ae.tick.iteration))
