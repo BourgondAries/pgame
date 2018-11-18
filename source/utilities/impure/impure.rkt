@@ -17,7 +17,7 @@
                      threading)
          ffi/vector finalizer math/matrix opengl opengl/util threading
          glfw3 logger memo nested-hash spipe
-         "drawing.rkt" "pure.rkt")
+         "drawing.rkt" "../pure/pure.rkt")
 
 (define (glfwWindowShouldClose* window previous)
   (or previous (= GLFW_TRUE (glfwWindowShouldClose window)))

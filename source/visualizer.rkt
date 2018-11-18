@@ -3,7 +3,7 @@
 (provide show-visualization)
 
 (require racket/file racket/function racket/list racket/port racket/string racket/system
-         "pure.rkt"
+         pgame/utils
          logger)
 
 ;; Settings for tuning the graph

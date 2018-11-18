@@ -9,7 +9,7 @@
 
 (provide shutdown)
 
-(require pgame/source/all)
+(require glfw3 spipe pgame/utils)
 
 (define/H~> shutdown
   (glfwDestroyWindow  io.window)

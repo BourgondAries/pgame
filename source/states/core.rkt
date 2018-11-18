@@ -2,7 +2,7 @@
 
 (provide (all-defined-out))
 
-(require "../all.rkt" "shutdown.rkt" "native-menu.rkt")
+(require "../all.rkt" "shutdown.rkt" "native-menu.rkt" pgame/utils)
 
 (define/H~> core*
   ((const (identity-matrix 4)) io.neutral)
@@ -29,25 +29,29 @@
   )
 
 (define/H~> core*-pure*
-  (check-C-W-exit         (keys.left-control keys.w)   should-exit?)
+  (check-C-W-exit         (keys.left-control keys.w) should-exit?)
   walk
   (check-door-collision   (transform.x transform.y)  (collides?))
-  (check-collision        (transform collidables) (action))
-  (check-box              (transform.x transform.y) should-exit?)
+  (check-collision        (transform collidables)    (action))
+  (check-box              (transform.x transform.y)  should-exit?)
   ; (dbug (transform.x transform.y))
   ; (any-direction-keys?               (keys)                 (any-direction-keys?))
   )
 
 (define/H~> core*-post
-  (exit-c (ae.should-exit?) io.main)
-  ((if* (push-fsm decode-tmx)) (ae.keys.g)  io.core)
-  ((if* (set-fsm top-map))     (ae.collides?)   io.core)
-  ((if* (push-fsm menu))       (ae.keys.escape) io.core)
-  ((if* (push-fsm native-menu))       (ae.keys.b)      io.core)
-  (or* (ae.keys.g ae.collides? ae.keys.escape ae.keys.b) (ae.should-clear?))
+
+  (exit-c                  (ae.should-exit?)  io.main)
+  ((cond-push decode-tmx)  (ae.keys.g)        io.core)
+  ((cond-set top-map)      (ae.collides?)     io.core)
+  ((cond-push menu)        (ae.keys.escape)   io.core)
+  ((cond-set native-menu)  (ae.keys.b)        io.core)
+
+  (or* (ae.keys.g ae.collides? ae.keys.escape ae.keys.b)
+       (ae.should-clear?))
+
   (not ae.should-clear?)
-  (make-global-transform*    (ae.transform)   (io.transform))
-  (render-absolute   ())
+  (make-global-transform* (ae.transform)   (io.transform))
+  (render-absolute        ())
   (matrix* (io.transform io.perspective) (io.view))
   (#:context (io.transform)
     (draw              (ae.tick.direction-keys ae.last-direction io.animation.madotsuki) ())

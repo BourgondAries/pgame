@@ -2,7 +2,7 @@
 
 (provide native-menu)
 
-(require logger glfw3 spipe "../pure.rkt")
+(require logger glfw3 spipe pgame/utils)
 
 (define/H~> native-menu
   pop

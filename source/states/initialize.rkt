@@ -1,6 +1,6 @@
 #lang racket
 
-(require "../all.rkt" "core.rkt")
+(require "../all.rkt" "core.rkt" pgame/utils)
 
 (provide (all-defined-out))
 

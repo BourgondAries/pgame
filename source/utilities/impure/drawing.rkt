@@ -4,8 +4,8 @@
 
 (require racket/list
          ffi/vector finalizer math/matrix opengl opengl/util
-         "pure.rkt"
-         "../../memo/main.rkt"
+         "../pure/pure.rkt"
+         memo
          logger)
 
 (define size-gl-float 4)

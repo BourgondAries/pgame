@@ -2,7 +2,7 @@
 
 (provide core)
 
-(require spipe logger glfw3 "impure.rkt" "pure.rkt" "states/initialize.rkt" "states/shutdown.rkt")
+(require spipe logger glfw3 "states/initialize.rkt" "states/shutdown.rkt" pgame/utils)
 (require syntax/parse/define)
 
 (define/H~> core

@@ -1,5 +1,7 @@
 #lang racket/base
 
+(require "utilities/main.rkt")
+
 (require
   (for-syntax racket/base)
   syntax/parse/define)
@@ -21,9 +23,7 @@
 #| (states) |#
 
 (reprovide
-  "drawing.rkt"
-  "impure.rkt"
-  "pure.rkt"
+  "utilities/impure/drawing.rkt"
   "states/decode-tmx.rkt"
   "states/menu.rkt"
   "states/top-map.rkt"

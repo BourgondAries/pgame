@@ -160,6 +160,16 @@
       value
       0)))
 
+(define ((cond-push what) condition lst)
+  (if condition
+    (cons what lst)
+    lst))
+
+(define ((cond-set what) condition lst)
+  (if condition
+    (cons what (rest lst))
+    lst))
+
 (define (check-C-W-exit left-control w previous)
   (or (and left-control w) previous))
 
