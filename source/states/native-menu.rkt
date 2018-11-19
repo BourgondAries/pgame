@@ -2,7 +2,7 @@
 
 (provide native-menu)
 
-(require logger glfw3 spipe pgame/utils)
+(require pgame/source/all pgame/utils)
 
 (define/H~> native-menu
   pop

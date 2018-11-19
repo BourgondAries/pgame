@@ -2,7 +2,11 @@
 
 (provide (all-defined-out))
 
-(require "../all.rkt" "shutdown.rkt" "native-menu.rkt" pgame/utils)
+(require "../all.rkt" "native-menu.rkt" pgame/utils)
+
+#| To gather knowledge |#
+#| The greatest of pains exists |#
+#| Ignorance is bliss |#
 
 (define/H~> core*
   ((const (identity-matrix 4)) io.neutral)
