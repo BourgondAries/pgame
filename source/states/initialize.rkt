@@ -5,7 +5,6 @@
 (provide (all-defined-out))
 
 (define/H~> initialize
-  ((const (hasheq)))
   (initialize-glfw       () (io.window))
   (get-window-size       (io.window) (io.window-size.width io.window-size.height))
   (add-sprites*          () (io.animation.madotsuki))
