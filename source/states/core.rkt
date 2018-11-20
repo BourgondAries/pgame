@@ -8,6 +8,8 @@
 #| The greatest of pains exists |#
 #| Ignorance is bliss |#
 
+(define (core s) s)
+
 (define/H~> core*
   ((const (identity-matrix 4)) io.neutral)
   ((const '("data/basictiles.png" 1 1)) ae.tilemap-data)

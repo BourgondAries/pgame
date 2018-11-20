@@ -35,7 +35,6 @@
              (filter not-empty? (flatten (map (curry directory-list #:build? #t) directories*))))
            (loop (append (filter file-exists? iteration) files*)
                  (filter directory-exists? iteration))])))
-   (writeln all-files)
    (datum->syntax #'s `(reprovide* ,@(map (lambda (file)
                                           `(file ,(path->string file)))
                                         all-files)) #'s)
