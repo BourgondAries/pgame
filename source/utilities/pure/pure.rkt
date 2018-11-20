@@ -237,6 +237,8 @@
        (require module-path ...))))
 
 (define-syntax-parser define-recursive-load
+  ([_ storage:id directory*:string]
+   #'(define-recursive-load storage directory* identity))
   ([_ storage:id directory*:string fold:expr]
    (define this-file (syntax-source (attribute directory*)))
    (define-values (directory file root?) (split-path this-file))
@@ -247,7 +249,6 @@
      `(begin
         ,@(map (lambda (f)
                  (define-values (dir f2 r) (split-path f))
-                 (info f2)
                  `(require (only-in (file ,(path->string f)) ,(string->symbol (path->string (path-replace-extension f2 "")))))
                  )
           all-files)
@@ -262,15 +263,18 @@
                       )
                     all-files)
               )
-            #| (list |#
-            #|   ,@(map (lambda (f) |#
-            #|            (info `(processing ,f)) |#
-            #|           (define-values (dir f2 r) (split-path f)) |#
-            #|           (list |#
-            #|             (string->symbol (path->string (path-replace-extension f2 ""))) |#
-            #|           )) |#
-            #|         all-files) ) |#
             ))
         )
      #'storage)
    ))
+
+(define (functions->hash symbols)
+  (let loop ([state (hasheq)]
+             [symbols* symbols])
+    (cond
+      ([null? symbols*] state)
+      (else
+        (loop
+          (hash-set state (caar symbols*) (cadar symbols*))
+          (cdr symbols*)
+          )))))

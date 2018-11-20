@@ -3,18 +3,7 @@
 (require glfw3 spipe pgame/utils)
 
 
-(define-recursive-load states "states"
-  (lambda (symbols)
-    (writeln symbols)
-    (let loop ([state (hasheq)]
-               [symbols* symbols])
-      (cond
-        ([null? symbols*] state)
-        (else
-          (loop
-            (hash-set state (caar symbols*) (cadar symbols*))
-            (cdr symbols*)
-            ))))))
+(define-recursive-load states "states" functions->hash)
 
 (module+ main
   (void
