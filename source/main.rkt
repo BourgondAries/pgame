@@ -2,6 +2,7 @@
 
 (require pgame/utils)
 
-(define-recursive-load states "states" functions->hash)
+(define-recursive-load states "states")
 
-((hash-ref states 'begin-state) (hasheq 'io (hasheq 'states states)))
+((hash-ref (functions->hash states) 'begin-state)
+ (hasheq 'io (hasheq 'states (functions->hash states))))

@@ -237,6 +237,7 @@
        (require module-path ...))))
 
 (define-syntax-parser define-recursive-load
+  ; TODO 
   ([_ storage:id directory*:string]
    #'(define-recursive-load storage directory* identity))
   ([_ storage:id directory*:string fold:expr]
@@ -247,13 +248,13 @@
    (datum->syntax
      #'storage
      `(begin
-        ,@(map (lambda (f)
-                 (define-values (dir f2 r) (split-path f))
-                 `(require (only-in (file ,(path->string f)) ,(string->symbol (path->string (path-replace-extension f2 "")))))
-                 )
-          all-files)
-        (define ,(attribute storage)
-          (,(attribute fold)
+        (module ,(attribute storage) racket/base
+          ,@(map (lambda (f)
+                   (define-values (dir f2 r) (split-path f))
+                   `(require (only-in (file ,(path->string f)) ,(string->symbol (path->string (path-replace-extension f2 "")))))
+                   )
+            all-files)
+          (define ,(attribute storage)
             (list
               ,@(map (lambda (f)
                       (define-values (dir f2 r) (split-path f))
@@ -261,9 +262,9 @@
                          (quote ,(string->symbol (path->string (path-replace-extension f2 ""))))
                          ,(string->symbol (path->string (path-replace-extension f2 ""))))
                       )
-                    all-files)
-              )
-            ))
+                    all-files)))
+          (provide ,(attribute storage)))
+        (require (quote ,(attribute storage)))
         )
      #'storage)
    ))
